@@ -1,0 +1,105 @@
+clear
+pesona:
+    you are a seasoned software developer
+    you are a seasoned business analysts for web application projects
+    you are a veteran software architect
+    you are a senior release manager and devops engineer
+
+context: you must plan, design, implement, document, test, package and deliver a complete software application for a client
+
+criteria:
+    1- create the project inside of the local directory: /media/eoex/DOJO/CONSULTING/PROJECTS/eoex-store/
+    2- the name if the project is: EOEX App Store - the brand is EOEX - the subtitle is App Store
+    3- the app summary information is:
+        Project: eoex-app-store
+        Objectives: to implement and deliver an end-to-end web application that hosts various mobile applications to be downloaded
+        Author: EOEX
+        Contributor: Sosthene Grosset-Janin (sgrosset.consulting@gmail.com)
+        Client: EOEX Digital
+    4- from vscode, create and save the project workspace and create the python virtual environment with coda (venv)
+    5- create a venv pyhon virtual environment for this project
+    6- create for this project a local MySQL database with the following data model:
+        - user table [admin, user]
+        - the admin user who will have visibility for all of the other users information
+    7- setup git for this project
+        - username: Sosthene Grosset-Janin
+        - user email: educ1.eoex@gmail.com
+        - create a first commit with message "FIRST COMMIT: [eoex-app-name - app setup-SGJ -v[incremental major version number].[incremental minor version number].[incrementatl patch number]]"
+        - use this commit structure for every commit
+        - the source remote repo (where the first project source is downloaded from) is: git@github.com:eoextrainer/eoex-store.git
+        - the downstream remote repo is: git@github.com:eoextrainer/eoex-store.git
+        - the upstream remote repo is: git@github.com:eoextrainer/eoex-store.git
+        - create the following local git branches:
+            change master to main -> synched to the downstream remote repo main branch
+            develop
+            feature
+            fix
+            test
+            ready -> synched to the downstream remote repo int branch
+            archive
+        - every time some new development is required you must follow this workflow:
+            pull sources from the downstream remote repo into the local main branch
+            update the local develop branch with these sources
+            update the local feature branch with these sources
+            create a new feature branch from the "feature" branch with name: feat-[name-of-new-feature]
+            save all of the local developments
+            stash all of the changes with the relevant message and tag
+            stage all of the changes
+            commit all of the changes with the relevant message in the format:[eoex-ai-travel-agent-[short description of the changes]-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local test branch
+            thoroughly test all aspects of the application in its current state: backend, integrations, database, front end, ports
+            open the application fronend from the local chrome browser with no cache
+            if any of the tests fail then stop and request input from the developer
+            if all of the tests are successful and the application successfully loads in the browser then continue
+            create a patch and bundle of all of the changes inside the archive branch and commit them with a message of the format: [eoex-ai-travel-agent-app project archive-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local readt branch
+            push all of the changes from the local ready branch onto the remote repo int branch
+            create a pull and merge request
+        - every time a feature enhancement is required you must follow this workflow:
+            pull sources from the downstream remote repo into the local main branch
+            update the local develop branch with these sources
+            update the local feature branch with these sources
+            checkout to the target feature branch
+            save all of the local developments
+            stash all of the changes with the relevant message and tag
+            stage all of the changes
+            commit all of the changes with the relevant message in the format:[eoex-ai-travel-agent-[short description of the changes]-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local test branch
+            thoroughly test all aspects of the application in its current state: backend, integrations, database, front end, ports
+            open the application fronend from the local chrome browser with no cache
+            if any of the tests fail then stop and request input from the developer
+            if all of the tests are successful and the application successfully loads in the browser then continue
+            create a patch and bundle of all of the changes inside the archive branch and commit them with a message of the format: [eoex-ai-travel-agent-app project archive-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local readt branch
+            push all of the changes from the local ready branch onto the remote repo int branch
+            create a pull and merge request
+        - every time a bug fix is required you must follow this workflow:
+            pull sources from the downstream remote repo into the local main branch
+            update the local develop branch with these sources
+            update the local fix branch with these sources
+            create a new bugfix branch from the "fix" branch with name: bugfix-[bug-to-fix]
+            save all of the local developments
+            stash all of the changes with the relevant message and tag
+            stage all of the changes
+            commit all of the changes with the relevant message in the format:[eoex-ai-travel-agent-[short description of the changes]-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local test branch
+            thoroughly test all aspects of the application in its current state: backend, integrations, database, front end, ports
+            open the application fronend from the local chrome browser with no cache
+            if any of the tests fail then stop and request input from the developer
+            if all of the tests are successful and the application successfully loads in the browser then continue
+            create a patch and bundle of all of the changes inside the archive branch and commit them with a message of the format: [eoex-ai-travel-agent-app project archive-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local readt branch
+            push all of the changes from the local ready branch onto the remote repo int branch
+            create a pull and merge request
+        - save these three workflows inside a file called: app-changes.sh bash script.
+        - this script when run will ask the user what action to take (new development / feature enhancement / bug fix) and based on the user input the script will execute the correct workflow completely.
+    8- dockerise the entire application
+    9- create the application scaffolding with the following structure:
+        - frontend
+            - spalsh screen
+            - home screen
+        - backend
+        - database
+    10- add the following folders to the project workspace:
+        -/media/eoex/DOJO/CONSULTING/PROJECTS/
+    11- use the contents of the following file to build the complete frontend: /media/eoex/DOJO/CONSULTING/PROJECTS/templates/prompts/eoex-app-frontend-template.txt

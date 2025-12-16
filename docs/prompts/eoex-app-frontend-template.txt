@@ -1,0 +1,636 @@
+=======================================
+End-to-end React Native UI with Netflix-style design, animations, and enhancements
+This document delivers a complete, production-ready scaffold for a Netflix-style mobile UI in React Native. It includes dark UI branding, a cinematic splash, cross-fade transitions, staggered section reveals with slide and zoom, secure auth storage, deep linking to YouTube, an inline WebView player, theme context with persistence and manual toggle, navigation, and performance optimizations.
+
+Project overview and setup
+Stack and packages
+Core: React Native (Expo or bare RN), React Navigation
+
+Animations: Animated API (native driver), Easing
+
+UI: Linear Gradient (expo-linear-gradient or react-native-linear-gradient)
+
+Media: react-native-webview (inline player), react-native-fast-image (thumbnails)
+
+Auth: expo-auth-session (Expo) or @react-native-google-signin/google-signin (bare RN)
+
+Storage: AsyncStorage (preferences), SecureStore (Expo) or react-native-keychain (tokens)
+
+Deep linking: React Native Linking
+
+Install commands
+Expo:
+
+npx expo install expo-linear-gradient expo-auth-session expo-secure-store react-native-webview
+
+npm i @react-navigation/native @react-navigation/native-stack
+
+npx expo install react-native-screens react-native-safe-area-context
+
+Optional FastImage in Expo (requires prebuild): npm i react-native-fast-image
+
+Bare RN:
+
+npm i @react-navigation/native @react-navigation/native-stack react-native-screens react-native-safe-area-context
+
+npm i react-native-linear-gradient react-native-webview react-native-fast-image @react-native-google-signin/google-signin @react-native-async-storage/async-storage react-native-keychain
+
+Suggested file structure
+Root
+
+App.js
+
+src/
+
+theme/ThemeContext.js
+
+services/session.js
+
+utils/openYouTube.js
+
+data/videos.js
+
+screens/
+
+SplashScreen.js
+
+SignIn.js
+
+Home.js
+
+Player.js
+
+components/
+
+Hero.js
+
+MediaCarousel.js
+
+Features.js
+
+FAQ.js
+
+Footer.js
+
+Brand kit and theming
+Colors
+Primary red: #E50914
+
+Background dark: #141414
+
+Panel dark: #221F1F
+
+Text light: #FFFFFF
+
+Subtext gray: #B3B3B3
+
+Theme context with persistence and toggle
+jsx
+// src/theme/ThemeContext.js
+import React, { createContext, useState, useEffect, useMemo } from 'react';
+import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+
+const palettes = {
+dark: { bg: '#141414', panel: '#221F1F', text: '#FFFFFF', subtext: '#B3B3B3', red: '#E50914' },
+light: { bg: '#FFFFFF', panel: '#F3F3F3', text: '#000000', subtext: '#4A4A4A', red: '#E50914' },
+};
+
+export const ThemeContext = createContext();
+const THEME_KEY = 'streamnow.theme';
+
+export function ThemeProvider({ children }) {
+const system = useColorScheme();
+const [mode, setMode] = useState(system || 'dark');
+const [booted, setBooted] = useState(false);
+
+useEffect(() => {
+(async () => {
+const stored = await AsyncStorage.getItem(THEME_KEY);
+setMode(stored || system || 'dark');
+setBooted(true);
+})();
+}, [system]);
+
+const persistMode = async (next) => {
+setMode(next);
+await AsyncStorage.setItem(THEME_KEY, next);
+await SecureStore.setItemAsync(THEME_KEY, next); // optional
+};
+
+const value = useMemo(() => ({ theme: palettes[mode], mode, setMode: persistMode }), [mode]);
+
+if (!booted) return null;
+return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+Auth, secure token storage, and session bootstrap
+Session service
+jsx
+// src/services/session.js
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+
+const SESSION_KEY = 'streamnow.session';
+const TOKEN_KEY = 'streamnow.token';
+
+export const saveSession = (profile) => AsyncStorage.setItem(SESSION_KEY, JSON.stringify(profile));
+export const loadSession = async () => {
+const raw = await AsyncStorage.getItem(SESSION_KEY);
+return raw ? JSON.parse(raw) : null;
+};
+export const clearSession = async () => {
+await AsyncStorage.removeItem(SESSION_KEY);
+await SecureStore.deleteItemAsync(TOKEN_KEY);
+};
+export const saveToken = (token) => SecureStore.setItemAsync(TOKEN_KEY, token);
+export const getToken = () => SecureStore.getItemAsync(TOKEN_KEY);
+Sign-in screen (Expo with Google via AuthSession)
+jsx
+// src/screens/SignIn.js
+import React from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import * as AuthSession from 'expo-auth-session';
+
+export default function SignIn({ auth }) {
+const [email, setEmail] = React.useState('');
+const [password, setPassword] = React.useState('');
+
+const onLocal = async () => {
+try { await auth.signInLocal(email, password); } catch (e) { Alert.alert('Sign-in failed', e.message); }
+};
+
+const googleClientId = '<YOUR_GOOGLE_OAUTH_CLIENT_ID>';
+const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+const authUrl = https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent('profile email')};
+
+const onGoogle = async () => {
+const res = await AuthSession.startAsync({ authUrl });
+if (res.type === 'success' && res.params?.access_token) {
+const info = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+headers: { Authorization: Bearer ${res.params.access_token} },
+}).then(r => r.json());
+await auth.signInGoogle({ email: info.email, name: info.name, provider: 'google' }, res.params.access_token);
+} else {
+Alert.alert('Google sign-in cancelled');
+}
+};
+
+return (
+<View style={styles.container}>
+<Text style={styles.title}>Welcome back</Text>
+<TextInput style={styles.input} placeholder="Email" placeholderTextColor="#B3B3B3" value={email} onChangeText={setEmail} />
+<TextInput style={styles.input} placeholder="Password" placeholderTextColor="#B3B3B3" secureTextEntry value={password} onChangeText={setPassword} />
+<TouchableOpacity style={styles.cta} onPress={onLocal}><Text style={styles.ctaText}>Sign In</Text></TouchableOpacity>
+<TouchableOpacity style={styles.google} onPress={onGoogle}><Text style={styles.googleText}>Continue with Google</Text></TouchableOpacity>
+</View>
+);
+}
+const styles = StyleSheet.create({
+container: { padding: 24 },
+title: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 16 },
+input: { backgroundColor: '#221F1F', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 12 },
+cta: { backgroundColor: '#E50914', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+ctaText: { color: '#fff', fontWeight: '600' },
+google: { backgroundColor: '#fff', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 12 },
+googleText: { color: '#000', fontWeight: '600' },
+});
+App container with navigation and persisted auth
+jsx
+// App.js
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { Animated, StyleSheet, ActivityIndicator, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ThemeProvider } from './src/theme/ThemeContext';
+import { saveSession, loadSession, clearSession, saveToken } from './src/services/session';
+import SplashScreen from './src/screens/SplashScreen';
+import SignIn from './src/screens/SignIn';
+import Home from './src/screens/Home';
+import Player from './src/screens/Player';
+
+const Stack = createNativeStackNavigator();
+
+export default function App() {
+const [user, setUser] = useState(null);
+const [booted, setBooted] = useState(false);
+const [showSplash, setShowSplash] = useState(true);
+const homeOpacity = useRef(new Animated.Value(0)).current;
+
+useEffect(() => {
+(async () => {
+const existing = await loadSession();
+if (existing) setUser(existing);
+setBooted(true);
+Animated.timing(homeOpacity, { toValue: 1, duration: 1000, useNativeDriver: true }).start();
+})();
+}, [homeOpacity]);
+
+const auth = useMemo(() => ({
+signInLocal: async (email, password) => {
+if (!email?.includes('@') || password?.length < 6) throw new Error('Invalid credentials');
+const profile = { email, provider: 'local' };
+await saveSession(profile);
+setUser(profile);
+},
+signInGoogle: async (profile, token) => {
+await saveSession(profile);
+if (token) await saveToken(token);
+setUser(profile);
+},
+signOut: async () => { await clearSession(); setUser(null); },
+user,
+}), [user]);
+
+if (!booted) {
+return (
+<View style={{ flex: 1, backgroundColor: '#141414', justifyContent: 'center', alignItems: 'center' }}>
+<ActivityIndicator color="#E50914" />
+</View>
+);
+}
+
+return (
+<ThemeProvider>
+<NavigationContainer>
+<Animated.View style={[styles.homeWrapper, { opacity: homeOpacity }]}>
+<Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#141414' }, headerTintColor: '#fff', contentStyle: { backgroundColor: '#141414' } }}>
+{user ? (
+<>
+<Stack.Screen name="Home" options={{ title: 'StreamNow' }}>{(props) => <Home {...props} auth={auth} />}</Stack.Screen>
+<Stack.Screen name="Player" options={{ title: 'Now Playing' }}>{(props) => <Player {...props} />}</Stack.Screen>
+</>
+) : (
+<Stack.Screen name="SignIn" options={{ title: 'Sign In' }}>{(props) => <SignIn {...props} auth={auth} />}</Stack.Screen>
+)}
+</Stack.Navigator>
+</Animated.View>
+{showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+</NavigationContainer>
+</ThemeProvider>
+);
+}
+const styles = StyleSheet.create({ homeWrapper: { flex: 1 } });
+Cinematic splash and cross-fade overlay
+Splash (EOEX rise, scale, letter-spacing, fade-out)
+jsx
+// src/screens/SplashScreen.js
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions, Easing } from 'react-native';
+const { height } = Dimensions.get('window');
+
+export default function SplashScreen({ onFinish }) {
+const translateY = useRef(new Animated.Value(100)).current;
+const opacity = useRef(new Animated.Value(1)).current;
+const scale = useRef(new Animated.Value(0.9)).current;
+const letterSpacing = useRef(new Animated.Value(0)).current;
+
+useEffect(() => {
+Animated.parallel([
+Animated.timing(translateY, { toValue: -50, duration: 1500, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+Animated.timing(scale, { toValue: 1, duration: 1500, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+Animated.timing(letterSpacing, { toValue: 2, duration: 1500, easing: Easing.out(Easing.quad), useNativeDriver: false }),
+]).start(() => {
+Animated.timing(opacity, { toValue: 0, duration: 1000, delay: 700, useNativeDriver: true }).start(() => onFinish?.());
+});
+}, [translateY, opacity, scale, letterSpacing, onFinish]);
+
+return (
+<Animated.View style={[styles.overlay, { opacity }]}>
+<View style={styles.baseline} />
+<Animated.Text style={[styles.brand, { transform: [{ translateY }, { scale }], letterSpacing }]}>EOEX</Animated.Text>
+</Animated.View>
+);
+}
+const styles = StyleSheet.create({
+overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000', justifyContent: 'flex-end', alignItems: 'center', paddingBottom: height / 2, zIndex: 999 },
+baseline: { width: '100%', height: 2, backgroundColor: '#fff' },
+brand: { position: 'absolute', bottom: 0, fontSize: 48, fontWeight: '900', color: '#E50914' },
+});
+Home screen with master timeline (Animated.sequence)
+This orchestrates an organic, overlapping cascade for Hero → Carousel → Features → FAQ → Footer using a single master timeline.
+
+jsx
+// src/screens/Home.js
+import React, { useEffect, useRef, useContext } from 'react';
+import { Animated, StyleSheet, ScrollView, Easing } from 'react-native';
+import Hero from '../components/Hero';
+import MediaCarousel from '../components/MediaCarousel';
+import Features from '../components/Features';
+import FAQ from '../components/FAQ';
+import Footer from '../components/Footer';
+import { videos } from '../data/videos';
+import { ThemeContext } from '../theme/ThemeContext';
+
+export default function Home({ navigation, auth }) {
+const { theme } = useContext(ThemeContext);
+
+const sections = [
+{ key: 'hero', delay: 250, startY: 24 },
+{ key: 'carousel', delay: 300, startY: 28 },
+{ key: 'features', delay: 350, startY: 32 },
+{ key: 'faq', delay: 380, startY: 24 },
+{ key: 'footer', delay: 420, startY: 20 },
+];
+
+const animated = sections.map(() => ({
+opacity: useRef(new Animated.Value(0)).current,
+translateY: useRef(new Animated.Value(30)).current,
+scale: useRef(new Animated.Value(0.95)).current,
+}));
+
+useEffect(() => {
+const timeline = sections.map((sec, i) =>
+Animated.sequence([
+Animated.delay(sec.delay),
+Animated.parallel([
+Animated.timing(animated[i].opacity, { toValue: 1, duration: 800, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+Animated.timing(animated[i].translateY, { toValue: 0, duration: 800, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+Animated.timing(animated[i].scale, { toValue: 1, duration: 800, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+]),
+])
+);
+Animated.parallel(timeline).start();
+}, []);
+
+return (
+<ScrollView contentContainerStyle={styles.container}>
+<Animated.View style={{ opacity: animated[0].opacity, transform: [{ translateY: animated[0].translateY }, { scale: animated[0].scale }] }}>
+<Hero />
+</Animated.View>
+
+
+  <Animated.View style={{ opacity: animated[1].opacity, transform: [{ translateY: animated[1].translateY }, { scale: animated[1].scale }] }}>    <MediaCarousel title="Trending Now" items={videos.slice(0, 5)} onPressItem={(video) => navigation.navigate('Player', { video })} />  </Animated.View>  <Animated.View style={{ opacity: animated[2].opacity, transform: [{ translateY: animated[2].translateY }, { scale: animated[2].scale }] }}>    <Features />  </Animated.View>  <Animated.View style={{ opacity: animated[3].opacity, transform: [{ translateY: animated[3].translateY }, { scale: animated[3].scale }] }}>    <FAQ />  </Animated.View>  <Animated.View style={{ opacity: animated[4].opacity, transform: [{ translateY: animated[4].translateY }, { scale: animated[4].scale }] }}>    <Footer onSignOut={auth?.signOut} />  </Animated.View></ScrollView>
+);
+}
+const styles = StyleSheet.create({ container: { paddingBottom: 24 } });
+Components
+Hero
+jsx
+// src/components/Hero.js
+import React from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+
+export default function Hero() {
+const [email, setEmail] = React.useState('');
+return (
+<LinearGradient colors={['rgba(229,9,20,0.15)', 'rgba(0,0,0,0.9)']} style={styles.hero}>
+<Text style={styles.headline}>Unlimited movies, TV shows, and more</Text>
+<Text style={styles.subhead}>Starts at €7.99. Cancel anytime.</Text>
+<View style={styles.form}>
+<TextInput style={styles.input} placeholder="Email address" placeholderTextColor="#B3B3B3" value={email} onChangeText={setEmail} />
+<TouchableOpacity style={styles.cta}><Text style={styles.ctaText}>Get Started</Text></TouchableOpacity>
+</View>
+</LinearGradient>
+);
+}
+const styles = StyleSheet.create({
+hero: { padding: 24, alignItems: 'center' },
+headline: { color: '#fff', fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
+subhead: { color: '#B3B3B3', fontSize: 18, textAlign: 'center', marginBottom: 16 },
+form: { width: '100%', flexDirection: 'row', alignItems: 'center' },
+input: { flex: 1, backgroundColor: '#221F1F', color: '#fff', padding: 12, borderRadius: 8, marginRight: 8 },
+cta: { backgroundColor: '#E50914', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8 },
+ctaText: { color: '#fff', fontWeight: '600' },
+});
+Media carousel with FastImage
+jsx
+// src/components/MediaCarousel.js
+import React, { useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import FastImage from 'react-native-fast-image';
+import { getThumbnail } from '../data/videos';
+
+export default function MediaCarousel({ title, items, onPressItem }) {
+const data = useMemo(() => items, [items]);
+const renderItem = useCallback(({ item }) => (
+<TouchableOpacity onPress={() => onPressItem(item)} style={styles.card} activeOpacity={0.8}>
+<FastImage style={styles.poster} source={{ uri: getThumbnail(item.id), priority: FastImage.priority.normal }} resizeMode={FastImage.resizeMode.cover} />
+<Text style={styles.caption} numberOfLines={1}>{item.title}</Text>
+</TouchableOpacity>
+), [onPressItem]);
+
+return (
+<View style={styles.container}>
+<Text style={styles.title}>{title}</Text>
+<FlatList horizontal showsHorizontalScrollIndicator={false} data={data} keyExtractor={(item) => item.id} renderItem={renderItem} initialNumToRender={4} windowSize={7} removeClippedSubviews />
+</View>
+);
+}
+const styles = StyleSheet.create({
+container: { paddingVertical: 16, paddingHorizontal: 16 },
+title: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+card: { marginRight: 12, width: 140 },
+poster: { width: 140, height: 210, borderRadius: 8, backgroundColor: '#221F1F' },
+caption: { color: '#B3B3B3', marginTop: 6, fontSize: 12 },
+});
+Features, FAQ, and Footer with theme toggle
+jsx
+// src/components/Features.js
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+export default function Features() {
+const items = [
+{ h: 'Enjoy on your TV', p: 'Watch on Smart TVs, consoles, and more.' },
+{ h: 'Download to watch offline', p: 'Save favorites to watch anywhere.' },
+{ h: 'Watch everywhere', p: 'Stream across devices, anytime.' },
+{ h: 'Create profiles for kids', p: 'Family-friendly space with controls.' },
+];
+return (
+<View style={styles.container}>
+<Text style={styles.title}>More reasons to join</Text>
+<View style={styles.grid}>
+{items.map((it, i) => (
+<View key={i} style={styles.card}>
+<Text style={styles.h}>{it.h}</Text>
+<Text style={styles.p}>{it.p}</Text>
+</View>
+))}
+</View>
+</View>
+);
+}
+const styles = StyleSheet.create({
+container: { padding: 16 },
+title: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+card: { backgroundColor: '#221F1F', padding: 16, borderRadius: 8, width: '48%', marginBottom: 12 },
+h: { color: '#fff', fontWeight: '700', marginBottom: 8 },
+p: { color: '#B3B3B3' },
+});
+jsx
+// src/components/FAQ.js
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, LayoutAnimation, StyleSheet } from 'react-native';
+
+export default function FAQ() {
+const [open, setOpen] = useState(null);
+const items = [
+{ q: 'What is StreamNow?', a: 'Stream shows and movies on your devices.' },
+{ q: 'How much does it cost?', a: 'Plans start at €7.99 per month.' },
+];
+const toggle = (i) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setOpen(open === i ? null : i); };
+return (
+<View style={styles.container}>
+<Text style={styles.title}>Frequently Asked Questions</Text>
+{items.map((it, i) => (
+<View key={i} style={styles.item}>
+<TouchableOpacity onPress={() => toggle(i)}><Text style={styles.q}>{it.q}</Text></TouchableOpacity>
+{open === i && <Text style={styles.a}>{it.a}</Text>}
+</View>
+))}
+</View>
+);
+}
+const styles = StyleSheet.create({
+container: { padding: 16 },
+title: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+item: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.1)', paddingVertical: 12 },
+q: { color: '#fff', fontSize: 16, fontWeight: '600' },
+a: { color: '#B3B3B3', marginTop: 6 },
+});
+jsx
+// src/components/Footer.js
+import React, { useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { ThemeContext } from '../theme/ThemeContext';
+
+export default function Footer({ onSignOut }) {
+const { mode, setMode } = useContext(ThemeContext);
+return (
+<View style={styles.container}>
+<Text style={styles.help}>Questions? Contact support</Text>
+<View style={styles.links}>
+<Text style={styles.link}>FAQ</Text><Text style={styles.link}>Help Center</Text><Text style={styles.link}>Account</Text><Text style={styles.link}>Media Center</Text>
+</View>
+<TouchableOpacity style={styles.signOut} onPress={onSignOut}><Text style={styles.signOutText}>Sign Out</Text></TouchableOpacity>
+<TouchableOpacity style={styles.toggle} onPress={() => setMode(mode === 'dark' ? 'light' : 'dark')}>
+<Text style={styles.toggleText}>Switch to {mode === 'dark' ? 'Light' : 'Dark'} Mode</Text>
+</TouchableOpacity>
+<Text style={styles.legal}>© 2025 StreamNow. All rights reserved.</Text>
+</View>
+);
+}
+const styles = StyleSheet.create({
+container: { padding: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.1)' },
+help: { color: '#B3B3B3', marginBottom: 12 },
+links: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 12 },
+link: { color: '#B3B3B3', textDecorationLine: 'underline' },
+signOut: { backgroundColor: '#E50914', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 },
+signOutText: { color: '#fff', fontWeight: '600' },
+toggle: { backgroundColor: '#221F1F', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 },
+toggleText: { color: '#fff', fontWeight: '600' },
+legal: { color: '#B3B3B3' },
+});
+Data, deep linking, and inline player
+YouTube data and thumbnails
+jsx
+// src/data/videos.js
+export const videos = [
+{ id: '9_EJORk3s9w', title: 'Warriors vs Blazers Highlights', url: 'https://www.youtube.com/watch?v=9_EJORk3s9w' },
+{ id: 'y7r_QV0daBo', title: 'Lakers vs Suns Full Game', url: 'https://www.youtube.com/watch?v=y7r_QV0daBo' },
+{ id: '1X-L_iLClec', title: 'Lakers vs Suns 2nd Qtr', url: 'https://www.youtube.com/watch?v=1X-L_iLClec' },
+{ id: 'hmlloslv0PM', title: 'Warriors vs Blazers Full Game', url: 'https://www.youtube.com/watch?v=hmlloslv0PM' },
+{ id: 'D6iBe1QOqGo', title: 'Warriors vs Timberwolves', url: 'https://www.youtube.com/watch?v=D6iBe1QOqGo' },
+{ id: 'L77ZfZ2CQcE', title: 'Sample Highlight', url: 'https://www.youtube.com/watch?v=L77ZfZ2CQcE' },
+{ id: 'xNl4q68Vgzo', title: 'Sample Game', url: 'https://www.youtube.com/watch?v=xNl4q68Vgzo' },
+{ id: 'Ec5e3sTE-nc', title: 'Sample Recap', url: 'https://www.youtube.com/watch?v=Ec5e3sTE-nc' },
+{ id: 'PKfJUvDNyRo', title: 'Sample Match', url: 'https://www.youtube.com/watch?v=PKfJUvDNyRo' },
+];
+export const getThumbnail = (id) => https://img.youtube.com/vi/${id}/hqdefault.jpg;
+Deep link utility
+jsx
+// src/utils/openYouTube.js
+import { Linking } from 'react-native';
+
+export async function openYouTube(videoIdOrUrl) {
+const id = videoIdOrUrl.includes('youtube.com')
+? new URL(videoIdOrUrl).searchParams.get('v')
+: videoIdOrUrl;
+const appUrl = youtube://www.youtube.com/watch?v=${id};
+const webUrl = https://www.youtube.com/watch?v=${id};
+
+const supported = await Linking.canOpenURL(appUrl);
+if (supported) return Linking.openURL(appUrl);
+return Linking.openURL(webUrl);
+}
+Player with inline WebView (iOS and Android)
+jsx
+// src/screens/Player.js
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { WebView } from 'react-native-webview';
+
+export default function Player({ route }) {
+const { video } = route.params;
+const embedUrl = useMemo(() => https://www.youtube.com/embed/${video.id}?autoplay=1&playsinline=1, [video.id]);
+return (
+<View style={styles.container}>
+<Text style={styles.title}>{video.title}</Text>
+<View style={styles.player}>
+<WebView
+source={{ uri: embedUrl }}
+allowsInlineMediaPlayback
+mediaPlaybackRequiresUserAction={false}
+javaScriptEnabled
+domStorageEnabled
+startInLoadingState
+style={{ flex: 1 }}
+/>
+</View>
+<Text style={styles.note}>Playback opens inline; use back to exit.</Text>
+</View>
+);
+}
+const styles = StyleSheet.create({
+container: { flex: 1, padding: 16 },
+title: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+player: { height: 220, borderRadius: 8, overflow: 'hidden', backgroundColor: '#000' },
+note: { color: '#B3B3B3', marginTop: 8 },
+});
+Platform settings
+iOS Info.plist additions:
+
+WKAllowsInlineMediaPlayback = true
+
+Android Manifest:
+
+android:hardwareAccelerated="true" in application/activity
+
+Notes on performance and accessibility
+FastImage: Improves image caching; use stable keys (video.id) and memoized renderers (useCallback).
+
+Lists: Use FlatList virtualization and tune initialNumToRender, windowSize, and removeClippedSubviews.
+
+Animations: Always use useNativeDriver: true for transform/opacity; avoid native driver for letterSpacing.
+
+A11y: Make touch targets large; readable contrast; descriptive labels.
+
+use only these video urls for all of the horizontal caroussel tiles:
+https://www.youtube.com/watch?v=RfemKa8jOwQ&pp=ygUTbmJhIGdhbWUgaGlnaGxpZ2h0c9IHCQk6CgGHKiGM7w%3D%3D
+https://www.youtube.com/watch?v=LJCpMuBw2NY&pp=ygUTbmJhIGdhbWUgaGlnaGxpZ2h0cw%3D%3D
+https://www.youtube.com/watch?v=qM4P8Q6Xct0&pp=ygUTbmJhIGdhbWUgaGlnaGxpZ2h0cw%3D%3D
+https://www.youtube.com/watch?v=dJxAf6t8iAQ&pp=ygUTbmJhIGdhbWUgaGlnaGxpZ2h0cw%3D%3D
+https://www.youtube.com/watch?v=bJooVVfYjMk&pp=ygUTbmJhIGdhbWUgaGlnaGxpZ2h0cw%3D%3D
+
+https://www.youtube.com/watch?v=YqdAEdkHrwo&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=ZdC5mFHPldg&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=MaQj6_xC7jE&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=4OReNgxlfK4&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=KD18ddeFuyM&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=nb_fFj_0rq8&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+
+https://www.youtube.com/watch?v=lgoxHC7WF9w&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=5lFTclUWljM&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=a_2P8SBiQO4&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=e0Eo0D038rQ&pp=ygUObW92aWUgdHJhaWxlcnPSBwkJOgoBhyohjO8%3D
+https://www.youtube.com/watch?v=irXTps1REHU&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+
+https://www.youtube.com/watch?v=R4wiXj9NmEE&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=eBS7YtckutU&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=v4qAW7xuKNQ&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=K7cvje-gkec&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+https://www.youtube.com/watch?v=43R9l7EkJwE&pp=ygUObW92aWUgdHJhaWxlcnM%3D
+=======================================

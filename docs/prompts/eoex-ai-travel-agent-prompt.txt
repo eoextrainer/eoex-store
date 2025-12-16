@@ -1,0 +1,176 @@
+pesona:
+    you are a seasoned software developer
+    you are a seasoned business analysts for web application projects
+    you are a veteran software architect
+    you are a senior release manager and devops engineer
+
+context: you must plan, design, implement, document, test, package and deliver a complete software application for a client
+
+criteria:
+    1- create the project inside of the local directory: /media/eoex/DOJO/CONSULTING/PROJECTS/eoex-apps-travel-ai
+    2- the name if the project is: eoex-ai-travel-agent
+    3- the app summary information is:
+        Project: eoex-ai-travel-agent
+        Objectives: to implement and deliver an end-to-end web application that searches, configures and books all of the end user's travel plans based on specific user input criteria
+        Author: EOEX Consulting
+        Contributor: Sosthene Grosset-Janin (sgrosset.consulting@gmail.com)
+        Client: EOEX Academy
+    4- from vscode, create and save the project workspace
+    5- create a venv pyhon virtual environment for this project
+    6- create for this project a local MySQL database with the following data model:
+        - users (first name, surname, date of birth, current location, current budget, travel preferences: [business or personal], travel companions: [none, 1,2,3,4], special travel needs)
+        - journeys (contains: flights, accomodation, transportation, food choices, shopping choices, places to visit)
+        - flights (a list of travel city destinations generated based on the destination country chosen)
+        - accomodation (a list of accomodations generated based on the destination city chosen)
+        - transporation (a list of local transporation options generated based on the destination city chosen)
+        - food choices (a list of restaurant and food choices generated based on the destination city chosen)
+        - shopping choices (a list of shopping options generated based on the destination city chosen)
+        - places to visit (a list of cultural sites to visit generated based on the destination city chosen)
+        - this database will be seeded from the output of API calls to the travel API provided below
+        - this application will load automatically using the default user (traveler-1)
+        - create an admin user who will have visibility for all of the travel information from every user and will have a dashboard table to view travel journey information filtered by user, destination, and budget
+    7- travel API information
+        - API provider: Amadeus (https://developers.amadeus.com/)
+        - List of supported endpoints found in file: doc/amadeus-endpoints.txt
+        - Travel API user authentication credentials found in file: doc/eoex-web-apss-API-keys
+        - use the constraints below to setup the API
+    8- setup git for this project
+        - username: Sosthene Grosset-Janin
+        - user email: educ1.eoex@gmail.com
+        - create a first commit with message "FIRST COMMIT: [eoex-ai-travel-agent-project app setup-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]"
+        - use this commit structure for every commit
+        - the source remote repo (where the first project source is downloaded from) is: git@github.com:eoextrainer/eoex-ai-travel-agent.git
+        - the downstream remote repo is: git@github.com:eoextrainer/eoex-ai-travel-agent.git
+        - the upstream remote repo is: git@github.com:eoextrainer/eoex-ai-travel-agent.git
+        - create the following local git branches:
+            change master to main -> synched to the downstream remote repo main branch
+            develop
+            feature
+            fix
+            test
+            ready -> synched to the downstream remote repo int branch
+            archive
+        - every time some new development is required you must follow this workflow:
+            pull sources from the downstream remote repo into the local main branch
+            update the local develop branch with these sources
+            update the local feature branch with these sources
+            create a new feature branch from the "feature" branch with name: feat-[name-of-new-feature]
+            save all of the local developments
+            stash all of the changes with the relevant message and tag
+            stage all of the changes
+            commit all of the changes with the relevant message in the format:[eoex-ai-travel-agent-[short description of the changes]-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local test branch
+            thoroughly test all aspects of the application in its current state: backend, integrations, database, front end, ports
+            open the application fronend from the local chrome browser with no cache
+            if any of the tests fail then stop and request input from the developer
+            if all of the tests are successful and the application successfully loads in the browser then continue
+            create a patch and bundle of all of the changes inside the archive branch and commit them with a message of the format: [eoex-ai-travel-agent-app project archive-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local readt branch
+            push all of the changes from the local ready branch onto the remote repo int branch
+            create a pull and merge request
+        - every time a feature enhancement is required you must follow this workflow:
+            pull sources from the downstream remote repo into the local main branch
+            update the local develop branch with these sources
+            update the local feature branch with these sources
+            checkout to the target feature branch
+            save all of the local developments
+            stash all of the changes with the relevant message and tag
+            stage all of the changes
+            commit all of the changes with the relevant message in the format:[eoex-ai-travel-agent-[short description of the changes]-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local test branch
+            thoroughly test all aspects of the application in its current state: backend, integrations, database, front end, ports
+            open the application fronend from the local chrome browser with no cache
+            if any of the tests fail then stop and request input from the developer
+            if all of the tests are successful and the application successfully loads in the browser then continue
+            create a patch and bundle of all of the changes inside the archive branch and commit them with a message of the format: [eoex-ai-travel-agent-app project archive-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local readt branch
+            push all of the changes from the local ready branch onto the remote repo int branch
+            create a pull and merge request
+        - every time a bug fix is required you must follow this workflow:
+            pull sources from the downstream remote repo into the local main branch
+            update the local develop branch with these sources
+            update the local fix branch with these sources
+            create a new bugfix branch from the "fix" branch with name: bugfix-[bug-to-fix]
+            save all of the local developments
+            stash all of the changes with the relevant message and tag
+            stage all of the changes
+            commit all of the changes with the relevant message in the format:[eoex-ai-travel-agent-[short description of the changes]-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local test branch
+            thoroughly test all aspects of the application in its current state: backend, integrations, database, front end, ports
+            open the application fronend from the local chrome browser with no cache
+            if any of the tests fail then stop and request input from the developer
+            if all of the tests are successful and the application successfully loads in the browser then continue
+            create a patch and bundle of all of the changes inside the archive branch and commit them with a message of the format: [eoex-ai-travel-agent-app project archive-SGJ-v[incremental major version number].[incremental minor version number].[incrementatl patch number]]
+            checkout and merge changes to the local readt branch
+            push all of the changes from the local ready branch onto the remote repo int branch
+            create a pull and merge request
+        - save these three workflows inside a file called: app-changes.sh bash script.
+        - this script when run will ask the user what action to take (new development / feature enhancement / bug fix) and based on the user input the script will execute the correct workflow completely.
+
+
+
+constraints:
+    Installation:
+        - This SDK requires Python 3.8+. You can install it directly with pip inside the python virtual environment: [pip install amadeus] or [pip install -r requirements.txt]
+        - test that the travel API is setup correctly using python code:
+            from amadeus import Client, ResponseError
+
+            amadeus = Client(
+                client_id='REPLACE_BY_YOUR_API_KEY',
+                client_secret='REPLACE_BY_YOUR_API_SECRET'
+            )
+
+            try:
+                response = amadeus.shopping.flight_offers_search.get(
+                    originLocationCode='MAD',
+                    destinationLocationCode='ATH',
+                    departureDate='2024-11-01',
+                    adults=1)
+                print(response.data)
+            except ResponseError as error:
+                print(error)
+
+        - Initialization: The client can be initialized directly.
+            # Initialize using parameters
+            amadeus = Client(client_id='REPLACE_BY_YOUR_API_KEY', client_secret='REPLACE_BY_YOUR_API_SECRET')
+
+        - Logging & Debugging. The SDK makes it easy to add your own logger:
+            import logging
+
+            logger = logging.getLogger('your_logger')
+            logger.setLevel(logging.DEBUG)
+
+            amadeus = Client(
+                client_id='REPLACE_BY_YOUR_API_KEY',
+                client_secret='REPLACE_BY_YOUR_API_SECRET',
+                logger=logger
+            )
+
+examples:
+    Making API calls. This library conveniently maps every API path to a similar path:
+    For example, GET /v2/reference-data/urls/checkin-links?airlineCode=BA would be: amadeus.reference_data.urls.checkin_links.get(airlineCode='BA')
+
+    Similarly, to select a resource by ID, you can pass in the ID to the singular path.
+    For example, GET /v2/shopping/hotel-offers/XZY would be: amadeus.shopping.hotel_offer('XYZ').get()
+
+    You can make any arbitrary API call directly with the .get method as well: amadeus.get('/v2/reference-data/urls/checkin-links', airlineCode='BA')
+    Or, with POST method: amadeus.post('/v1/shopping/flight-offers/pricing', body)
+
+optimisation:
+    - dockerise this application and make it available in the dockerhub: https://hub.docker.com/repositories/eoex by creating the relevant repository
+    - deploy the entire app to codespace on the same github repo
+
+format:
+    the entire project documentation must be written in english
+
+output:
+    create the entire project documentation with the following structure
+        0- project poster
+            - project document cover: with image illustrating the target application and its industry or environment
+            - executive summary (a business explanation and cost-benefit explanation for c-level stakeholders)
+            - use case analysis (a non-technical explanation of the challenges that this application will address and resolve, namely to give each non-technical user the ability to use a self-service when planning their travels)
+        1- Project Planning: detail all phases of the project planning and the technical resources required from the point of view of a senior software project manager. this plan must be detailed and comprehensive
+        2- Project Design: create all of the diagrams, and graphical wireframes needed to illsutrate the final application and each of its journeys from an end user point of view
+        3- Project Architure: create a comprehensive technical analysis and architectural plan for this application useing UML data models, ERP, sequence, state diagrams, C4 models and other relevant graphical representation of each stage of the application, its backend, its database, its API integrations, its python code design patterns, its javascript code design patterns, and its frontend
+        3- Project Implementation: the complete step by step, end to end development of the application from the point of view of a senior  software developer building this application using only html, css, javascript, python, mysql and any framework and dependencies required. include a complete unit test strategy and implementation. include complete code documentation and linting
+
