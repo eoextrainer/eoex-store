@@ -1,0 +1,5 @@
+# EOEX Store Database
+*.db
+*.sqlite
+*.log
+.env
