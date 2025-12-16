@@ -1,0 +1,112 @@
+Here’s how to enhance the staggered reveal with a slide‑in motion: each section not only fades in but also rises slightly from below, giving a layered cinematic entrance.
+
+🔧 Implementation
+We’ll animate both opacity and translateY for each section.
+
+Start with opacity 0 and translateY (e.g. 30px down).
+
+Animate to opacity 1 and translateY 0.
+
+Use Animated.stagger to sequence them.
+
+Home.js with fade + slide‑in
+jsx
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, ScrollView } from 'react-native';
+import Hero from '../components/Hero';
+import MediaCarousel from '../components/MediaCarousel';
+import Features from '../components/Features';
+import FAQ from '../components/FAQ';
+import Footer from '../components/Footer';
+import { videos } from '../data/videos';
+
+export default function Home({ navigation }) {
+  // Animated values for each section
+  const heroOpacity = useRef(new Animated.Value(0)).current;
+  const heroTranslate = useRef(new Animated.Value(30)).current;
+
+  const carouselOpacity = useRef(new Animated.Value(0)).current;
+  const carouselTranslate = useRef(new Animated.Value(30)).current;
+
+  const featuresOpacity = useRef(new Animated.Value(0)).current;
+  const featuresTranslate = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    // Animate each section with stagger
+    Animated.stagger(400, [
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroTranslate, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(carouselOpacity, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(carouselTranslate, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(featuresOpacity, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(featuresTranslate, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, [heroOpacity, heroTranslate, carouselOpacity, carouselTranslate, featuresOpacity, featuresTranslate]);
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Animated.View style={{ opacity: heroOpacity, transform: [{ translateY: heroTranslate }] }}>
+        <Hero />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: carouselOpacity, transform: [{ translateY: carouselTranslate }] }}>
+        <MediaCarousel
+          title="Trending Now"
+          items={videos.slice(0, 5)}
+          onPressItem={(video) => navigation.navigate('Player', { video })}
+        />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: featuresOpacity, transform: [{ translateY: featuresTranslate }] }}>
+        <Features />
+      </Animated.View>
+
+      <FAQ />
+      <Footer />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingBottom: 24,
+  },
+});
+🎨 Behavior
+Hero: slides up from 30px below while fading in.
+
+Carousel: follows ~400ms later with the same motion.
+
+Features: comes in last, rising and fading.
+
+FAQ and Footer appear normally after.

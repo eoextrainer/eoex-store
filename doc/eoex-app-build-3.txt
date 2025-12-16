@@ -1,0 +1,498 @@
+React Native Netflix-style app with navigation, auth, and optimized media
+I’m keeping the soul of the dark, bold aesthetic while wiring in navigation, simple auth, Google sign-in, FastImage posters, and lazy-loaded sections. The YouTube items open in a dedicated Player screen.
+
+Tech stack and packages
+Core: React Native (Expo or bare RN), React Navigation
+
+Media & performance: react-native-fast-image (posters), FlatList (virtualized, lazy rendering)
+
+UI: react-native-linear-gradient (hero), react-native-vector-icons (optional chevrons/icons)
+
+Auth:
+
+Username/password: Local validation for demo
+
+Google: Use expo-auth-session (Expo) or @react-native-google-signin/google-signin (bare RN)
+
+If you’re using Expo, prefer expo-auth-session. For bare RN, use @react-native-google-signin/google-signin.
+
+App structure
+Screens: SignIn, Home, Player
+
+Components: Hero, MediaCarousel, Features, FAQ, Footer
+
+Data: Static YouTube items with derived thumbnails
+
+Install commands
+Expo:
+
+Auth session: expo install expo-auth-session
+
+Linear gradient: expo install expo-linear-gradient
+
+Navigation: npm i @react-navigation/native @react-navigation/native-stack
+
+Dependencies: expo install react-native-screens react-native-safe-area-context
+
+FastImage alternative: Use Image + caching; or add react-native-fast-image in a prebuild/bare workflow
+
+Bare RN:
+
+npm i @react-navigation/native @react-navigation/native-stack
+
+npm i react-native-screens react-native-safe-area-context
+
+npm i react-native-linear-gradient react-native-fast-image @react-native-google-signin/google-signin
+
+Link/install pods as needed for iOS
+
+Data: YouTube items
+js
+// src/data/videos.js
+export const videos = [
+  { id: '9_EJORk3s9w', title: 'Warriors vs Blazers Highlights', url: 'https://www.youtube.com/watch?v=9_EJORk3s9w' },
+  { id: 'y7r_QV0daBo', title: 'Lakers vs Suns Full Game', url: 'https://www.youtube.com/watch?v=y7r_QV0daBo' },
+  { id: '1X-L_iLClec', title: 'Lakers vs Suns 2nd Qtr', url: 'https://www.youtube.com/watch?v=1X-L_iLClec' },
+  { id: 'hmlloslv0PM', title: 'Warriors vs Blazers Full Game', url: 'https://www.youtube.com/watch?v=hmlloslv0PM' },
+  { id: 'D6iBe1QOqGo', title: 'Warriors vs Timberwolves', url: 'https://www.youtube.com/watch?v=D6iBe1QOqGo' },
+  { id: 'L77ZfZ2CQcE', title: 'Sample Highlight', url: 'https://www.youtube.com/watch?v=L77ZfZ2CQcE' },
+  { id: 'xNl4q68Vgzo', title: 'Sample Game', url: 'https://www.youtube.com/watch?v=xNl4q68Vgzo' },
+  { id: 'Ec5e3sTE-nc', title: 'Sample Recap', url: 'https://www.youtube.com/watch?v=Ec5e3sTE-nc' },
+  { id: 'PKfJUvDNyRo', title: 'Sample Match', url: 'https://www.youtube.com/watch?v=PKfJUvDNyRo' },
+];
+
+export const getThumbnail = (id) => `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+Navigation and auth scaffold
+jsx
+// App.js
+import React, { useMemo, useState, useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import SignIn from './src/screens/SignIn';
+import Home from './src/screens/Home';
+import Player from './src/screens/Player';
+
+const Stack = createNativeStackNavigator();
+
+export default function App() {
+  const [user, setUser] = useState(null);
+
+  const auth = useMemo(() => ({
+    signInLocal: async (email, password) => {
+      // Demo-only: simple validation
+      if (!email?.includes('@') || password?.length < 6) throw new Error('Invalid credentials');
+      setUser({ email });
+    },
+    signOut: () => setUser(null),
+    signInGoogle: async (profile) => {
+      setUser(profile);
+    },
+    user,
+  }), [user]);
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: '#141414' },
+          headerTintColor: '#fff',
+          contentStyle: { backgroundColor: '#141414' },
+        }}
+      >
+        {user ? (
+          <>
+            <Stack.Screen name="Home" options={{ title: 'StreamNow' }}>
+              {(props) => <Home {...props} auth={auth} />}
+            </Stack.Screen>
+            <Stack.Screen name="Player" options={{ title: 'Now Playing' }}>
+              {(props) => <Player {...props} />}
+            </Stack.Screen>
+          </>
+        ) : (
+          <Stack.Screen name="SignIn" options={{ title: 'Sign In' }}>
+            {(props) => <SignIn {...props} auth={auth} />}
+          </Stack.Screen>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+Sign-in screen with local and Google
+Expo using expo-auth-session
+jsx
+// src/screens/SignIn.js
+import React, { useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const googleConfig = {
+  clientId: '<YOUR_GOOGLE_OAUTH_CLIENT_ID>',
+  responseType: 'token',
+  scopes: ['profile', 'email'],
+  redirectUri: AuthSession.makeRedirectUri({ useProxy: true }),
+};
+
+export default function SignIn({ auth }) {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const onLocal = async () => {
+    try {
+      await auth.signInLocal(email, password);
+    } catch (e) {
+      Alert.alert('Sign-in failed', e.message);
+    }
+  };
+
+  const onGoogle = async () => {
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleConfig.clientId}&redirect_uri=${encodeURIComponent(googleConfig.redirectUri)}&response_type=${googleConfig.responseType}&scope=${encodeURIComponent(googleConfig.scopes.join(' '))}`;
+    const result = await AuthSession.startAsync({ authUrl });
+    if (result.type === 'success' && result.params?.access_token) {
+      // For demo: you would fetch profile from Google APIs using the token
+      auth.signInGoogle({ email: 'google_user@example.com' });
+    } else {
+      Alert.alert('Google sign-in cancelled');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Welcome back</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        placeholderTextColor="#B3B3B3"
+        autoCapitalize="none"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        placeholderTextColor="#B3B3B3"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+      <TouchableOpacity style={styles.cta} onPress={onLocal}>
+        <Text style={styles.ctaText}>Sign In</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.google} onPress={onGoogle}>
+        <Text style={styles.googleText}>Continue with Google</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { padding: 24 },
+  title: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 16 },
+  input: { backgroundColor: '#221F1F', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 12 },
+  cta: { backgroundColor: '#E50914', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  ctaText: { color: '#fff', fontWeight: '600' },
+  google: { backgroundColor: '#fff', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 12 },
+  googleText: { color: '#000', fontWeight: '600' },
+});
+For bare RN: use @react-native-google-signin/google-signin and configure iOS/Android projects with your OAuth client IDs.
+
+Home screen with hero, lazy carousels, features, FAQ
+jsx
+// src/screens/Home.js
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+import Hero from '../components/Hero';
+import MediaCarousel from '../components/MediaCarousel';
+import Features from '../components/Features';
+import FAQ from '../components/FAQ';
+import Footer from '../components/Footer';
+import { videos } from '../data/videos';
+
+const sections = [
+  { key: 'hero' },
+  { key: 'trending', title: 'Trending Now', data: videos.slice(0, 5) },
+  { key: 'more', title: 'Must Watch', data: videos.slice(5) },
+  { key: 'features' },
+  { key: 'faq' },
+  { key: 'footer' },
+];
+
+export default function Home({ navigation, auth }) {
+  // Lazy-render sections via FlatList virtualization
+  return (
+    <FlatList
+      data={sections}
+      keyExtractor={(item) => item.key}
+      renderItem={({ item }) => {
+        switch (item.key) {
+          case 'hero':
+            return <Hero />;
+          case 'trending':
+          case 'more':
+            return (
+              <MediaCarousel
+                title={item.title}
+                items={item.data}
+                onPressItem={(video) => navigation.navigate('Player', { video })}
+              />
+            );
+          case 'features':
+            return <Features />;
+          case 'faq':
+            return <FAQ />;
+          case 'footer':
+            return <Footer onSignOut={auth.signOut} />;
+          default:
+            return null;
+        }
+      }}
+      contentContainerStyle={{ paddingBottom: 24 }}
+      initialNumToRender={2}
+      windowSize={5}
+      removeClippedSubviews
+    />
+  );
+}
+
+const styles = StyleSheet.create({});
+Hero component (mobile adaptation)
+jsx
+// src/components/Hero.js
+import React from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient'; // expo-linear-gradient
+
+export default function Hero() {
+  const [email, setEmail] = React.useState('');
+  return (
+    <LinearGradient
+      colors={['rgba(229,9,20,0.15)', 'rgba(0,0,0,0.9)']}
+      style={styles.hero}
+    >
+      <Text style={styles.headline}>Unlimited movies, TV shows, and more</Text>
+      <Text style={styles.subhead}>Starts at €7.99. Cancel anytime.</Text>
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="Email address"
+          placeholderTextColor="#B3B3B3"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TouchableOpacity style={styles.cta}>
+          <Text style={styles.ctaText}>Get Started</Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  hero: { padding: 24, alignItems: 'center' },
+  headline: { color: '#fff', fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
+  subhead: { color: '#B3B3B3', fontSize: 18, textAlign: 'center', marginBottom: 16 },
+  form: { width: '100%', flexDirection: 'row', alignItems: 'center' },
+  input: { flex: 1, backgroundColor: '#221F1F', color: '#fff', padding: 12, borderRadius: 8, marginRight: 8 },
+  cta: { backgroundColor: '#E50914', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8 },
+  ctaText: { color: '#fff', fontWeight: '600' },
+});
+Media carousel with FastImage posters
+jsx
+// src/components/MediaCarousel.js
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import FastImage from 'react-native-fast-image';
+import { getThumbnail } from '../data/videos';
+
+export default function MediaCarousel({ title, items, onPressItem }) {
+  const data = useMemo(() => items, [items]);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{title}</Text>
+      <FlatList
+        horizontal
+        data={data}
+        keyExtractor={(item) => item.id}
+        showsHorizontalScrollIndicator={false}
+        initialNumToRender={4}
+        windowSize={7}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => onPressItem(item)} style={styles.card} activeOpacity={0.8}>
+            <FastImage
+              style={styles.poster}
+              source={{
+                uri: getThumbnail(item.id),
+                priority: FastImage.priority.normal,
+              }}
+              resizeMode={FastImage.resizeMode.cover}
+            />
+            <Text style={styles.caption} numberOfLines={1}>{item.title}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { paddingVertical: 16, paddingHorizontal: 16 },
+  title: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  card: { marginRight: 12, width: 140 },
+  poster: { width: 140, height: 210, borderRadius: 8, backgroundColor: '#221F1F' },
+  caption: { color: '#B3B3B3', marginTop: 6, fontSize: 12 },
+});
+Player screen (open YouTube in WebView or external)
+For best compatibility, open YouTube in the native app or browser using Linking.openURL.
+
+If you need inline playback, use react-native-webview with embedded player.
+
+jsx
+// src/screens/Player.js
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+
+export default function Player({ route }) {
+  const { video } = route.params;
+
+  const open = () => Linking.openURL(video.url);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{video.title}</Text>
+      <TouchableOpacity style={styles.cta} onPress={open}>
+        <Text style={styles.ctaText}>Play on YouTube</Text>
+      </TouchableOpacity>
+      <Text style={styles.note}>Playback opens in the YouTube app or browser.</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 24 },
+  title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 16 },
+  cta: { backgroundColor: '#E50914', padding: 14, borderRadius: 8, alignItems: 'center' },
+  ctaText: { color: '#fff', fontWeight: '600' },
+  note: { color: '#B3B3B3', marginTop: 12 },
+});
+Features, FAQ, Footer
+jsx
+// src/components/Features.js
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+export default function Features() {
+  const items = [
+    { h: 'Enjoy on your TV', p: 'Watch on Smart TVs, consoles, and more.' },
+    { h: 'Download to watch offline', p: 'Save favorites to watch anywhere.' },
+    { h: 'Watch everywhere', p: 'Stream across devices, anytime.' },
+    { h: 'Create profiles for kids', p: 'Family-friendly space with controls.' },
+  ];
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>More reasons to join</Text>
+      <View style={styles.grid}>
+        {items.map((it, i) => (
+          <View key={i} style={styles.card}>
+            <Text style={styles.h}>{it.h}</Text>
+            <Text style={styles.p}>{it.p}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  card: { backgroundColor: '#221F1F', padding: 16, borderRadius: 8, width: '48%', marginBottom: 12 },
+  h: { color: '#fff', fontWeight: '700', marginBottom: 8 },
+  p: { color: '#B3B3B3' },
+});
+jsx
+// src/components/FAQ.js
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, LayoutAnimation, StyleSheet } from 'react-native';
+
+export default function FAQ() {
+  const [open, setOpen] = useState(null);
+  const items = [
+    { q: 'What is StreamNow?', a: 'Stream shows and movies on your devices.' },
+    { q: 'How much does it cost?', a: 'Plans start at €7.99 per month.' },
+  ];
+  const toggle = (i) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setOpen(open === i ? null : i);
+  };
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Frequently Asked Questions</Text>
+      {items.map((it, i) => (
+        <View key={i} style={styles.item}>
+          <TouchableOpacity onPress={() => toggle(i)}>
+            <Text style={styles.q}>{it.q}</Text>
+          </TouchableOpacity>
+          {open === i && <Text style={styles.a}>{it.a}</Text>}
+        </View>
+      ))}
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  item: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.1)', paddingVertical: 12 },
+  q: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  a: { color: '#B3B3B3', marginTop: 6 },
+});
+jsx
+// src/components/Footer.js
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+
+export default function Footer({ onSignOut }) {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.help}>Questions? Contact support</Text>
+      <View style={styles.links}>
+        <Text style={styles.link}>FAQ</Text>
+        <Text style={styles.link}>Help Center</Text>
+        <Text style={styles.link}>Account</Text>
+        <Text style={styles.link}>Media Center</Text>
+      </View>
+      <TouchableOpacity style={styles.signOut} onPress={onSignOut}>
+        <Text style={styles.signOutText}>Sign Out</Text>
+      </TouchableOpacity>
+      <Text style={styles.legal}>© 2025 StreamNow. All rights reserved.</Text>
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  container: { padding: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.1)' },
+  help: { color: '#B3B3B3', marginBottom: 12 },
+  links: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 12 },
+  link: { color: '#B3B3B3', textDecorationLine: 'underline' },
+  signOut: { backgroundColor: '#E50914', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 },
+  signOutText: { color: '#fff', fontWeight: '600' },
+  legal: { color: '#B3B3B3' },
+});
+Performance notes and tweaks
+FastImage caching: Use FastImage for posters in production; set priority and consider cache strategy.
+
+Lazy sections: Home uses FlatList to virtualize sections; tune initialNumToRender, windowSize, and removeClippedSubviews.
+
+Batch updates: Memoize props for carousels; avoid re-renders by stabilizing data arrays.
+
+Assets: Derive YouTube poster thumbnails via img.youtube.com to avoid additional APIs.
+
+Brand kit (for consistency)
+Colors: Primary red #E50914; background black #000000; dark gray #141414; panel #221F1F; white #FFFFFF; secondary gray #B3B3B3.
+
+Typography: Bold headlines 28–32px; medium subheads 18–20px; body 16px; system sans or Inter.
+
+Components: Red CTAs with white text and 8–12px radius; dark panels; visible focus/press states.

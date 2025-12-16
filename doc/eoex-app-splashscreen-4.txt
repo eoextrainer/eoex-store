@@ -1,0 +1,124 @@
+Here’s how to implement a cross‑fade transition: while the splash (EOEX rising animation) fades out, the Home screen content fades in underneath. This creates a polished cinematic effect.
+
+🔧 Steps
+Splash overlay: stays on top, animates upward, then fades out.
+
+Home screen wrapper: starts at opacity 0, fades in as splash fades out.
+
+Synchronize animations: run both fade animations together.
+
+App.js with cross‑fade
+jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { Animated, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import SplashScreen from './src/screens/SplashScreen';
+import { ThemeProvider } from './src/theme/ThemeContext';
+import Home from './src/screens/Home';
+
+export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const homeOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Simulate boot process
+    setTimeout(() => {
+      // Start fade-in for Home while Splash fades out
+      Animated.timing(homeOpacity, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
+    }, 2000);
+  }, [homeOpacity]);
+
+  return (
+    <ThemeProvider>
+      <NavigationContainer>
+        <Animated.View style={[styles.homeWrapper, { opacity: homeOpacity }]}>
+          <Home />
+        </Animated.View>
+        {showSplash && (
+          <SplashScreen onFinish={() => setShowSplash(false)} />
+        )}
+      </NavigationContainer>
+    </ThemeProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  homeWrapper: {
+    flex: 1,
+  },
+});
+SplashScreen.js (unchanged fade‑out logic)
+jsx
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+
+const { height } = Dimensions.get('window');
+
+export default function SplashScreen({ onFinish }) {
+  const translateY = useRef(new Animated.Value(100)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: -50,
+      duration: 1500,
+      useNativeDriver: true,
+    }).start(() => {
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 1000,
+        delay: 700,
+        useNativeDriver: true,
+      }).start(() => {
+        if (onFinish) onFinish();
+      });
+    });
+  }, [translateY, opacity, onFinish]);
+
+  return (
+    <Animated.View style={[styles.overlay, { opacity }]}>
+      <View style={styles.baseline} />
+      <Animated.Text
+        style={[styles.brand, { transform: [{ translateY }] }]}
+      >
+        EOEX
+      </Animated.Text>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: height / 2,
+    zIndex: 999,
+  },
+  baseline: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#fff',
+  },
+  brand: {
+    position: 'absolute',
+    bottom: 0,
+    fontSize: 48,
+    fontWeight: '900',
+    color: '#E50914',
+    letterSpacing: 2,
+  },
+});
+🎨 Behavior
+EOEX rises above the baseline.
+
+After a short pause, EOEX fades out.
+
+Simultaneously, the Home screen fades in from opacity 0 → 1.
+
+The result is a smooth cross‑fade: EOEX disappears as Home content emerges.

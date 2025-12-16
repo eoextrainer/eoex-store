@@ -1,0 +1,264 @@
+Got it — let’s refine the app with platform‑specific inline playback, secure token storage, a manual theme toggle, and performance optimizations.
+
+🎬 Inline playback
+iOS
+Use react-native-webview with allowsInlineMediaPlayback={true}.
+
+Ensure WKWebView is used (default in RN WebView).
+
+Add mediaPlaybackRequiresUserAction={false} to allow autoplay inline.
+
+In Info.plist, set:
+
+xml
+<key>WKAllowsInlineMediaPlayback</key>
+<true/>
+<key>UIWebView</key>
+<false/>
+Example:
+
+jsx
+<WebView
+  source={{ uri: `https://www.youtube.com/embed/${video.id}?playsinline=1&autoplay=1` }}
+  allowsInlineMediaPlayback
+  mediaPlaybackRequiresUserAction={false}
+  javaScriptEnabled
+  domStorageEnabled
+  style={{ flex: 1 }}
+/>
+Android
+Same WebView component works.
+
+Inline playback is handled by the Android WebView engine.
+
+Ensure android:hardwareAccelerated="true" in AndroidManifest.xml for smooth video.
+
+🔐 Secure token storage
+Do not use AsyncStorage for tokens.
+
+Use:
+
+Expo: expo-secure-store
+
+Bare RN: react-native-keychain
+
+Example with SecureStore:
+
+js
+import * as SecureStore from 'expo-secure-store';
+
+export async function saveToken(token) {
+  await SecureStore.setItemAsync('authToken', token);
+}
+export async function getToken() {
+  return SecureStore.getItemAsync('authToken');
+}
+export async function clearToken() {
+  await SecureStore.deleteItemAsync('authToken');
+}
+🎨 Manual theme toggle
+Extend ThemeProvider to accept overrides:
+
+jsx
+// ThemeContext.js
+export const ThemeContext = createContext();
+
+export function ThemeProvider({ children }) {
+  const systemScheme = useColorScheme();
+  const [mode, setMode] = useState(systemScheme || 'dark');
+
+  const theme = palettes[mode];
+
+  return (
+    <ThemeContext.Provider value={{ theme, mode, setMode }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+Add a toggle button:
+
+jsx
+// Footer.js
+import { useContext } from 'react';
+import { ThemeContext } from '../theme/ThemeContext';
+
+export default function Footer({ onSignOut }) {
+  const { mode, setMode } = useContext(ThemeContext);
+  return (
+    <View>
+      {/* ... */}
+      <TouchableOpacity onPress={() => setMode(mode === 'dark' ? 'light' : 'dark')}>
+        <Text style={{ color: '#fff' }}>Switch to {mode === 'dark' ? 'Light' : 'Dark'} Mode</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+⚡ Performance optimizations
+FastImage for thumbnails:
+
+jsx
+<FastImage
+  style={styles.poster}
+  source={{ uri: getThumbnail(item.id), priority: FastImage.priority.normal }}
+  resizeMode={FastImage.resizeMode.cover}
+/>
+Stable keys: Use video.id as keyExtractor.
+
+Memoized renderers:
+
+jsx
+const renderItem = useCallback(({ item }) => (
+  <TouchableOpacity onPress={() => onPressItem(item)}>
+    <FastImage style={styles.poster} source={{ uri: getThumbnail(item.id) }} />
+  </TouchableOpacity>
+), [onPressItem]);
+
+<FlatList
+  data={videos}
+  keyExtractor={(item) => item.id}
+  renderItem={renderItem}
+  initialNumToRender={4}
+  windowSize={7}
+  removeClippedSubviews
+/>
+Lazy sections: Use FlatList for sections with initialNumToRender and windowSize.
+
+✅ Summary
+iOS: Inline playback with allowsInlineMediaPlayback and Info.plist  keys.
+
+Android: WebView engine handles inline playback; enable hardware acceleration.
+
+Auth: Tokens stored in SecureStore/Keychain, not AsyncStorage.
+
+Theme: Context with manual toggle button to override system scheme.
+
+Performance: FastImage for caching, stable keys, memoized renderers, lazy loading.
+===================================
+
+
+
+====================================
+Here’s how you can persist the theme choice so that when a user toggles between light and dark, their preference is remembered across app restarts. We’ll use SecureStore for sensitive values if you want extra protection, but since theme mode isn’t sensitive, AsyncStorage is usually sufficient. I’ll show you both so you can decide.
+
+🔧 Setup
+Install dependencies:
+
+bash
+npm install @react-native-async-storage/async-storage
+expo install expo-secure-store   # if using Expo
+🎨 ThemeContext with persistence
+jsx
+// src/theme/ThemeContext.js
+import React, { createContext, useState, useEffect, useMemo } from 'react';
+import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+
+const palettes = {
+  dark: {
+    bg: '#141414',
+    panel: '#221F1F',
+    text: '#FFFFFF',
+    subtext: '#B3B3B3',
+    red: '#E50914',
+  },
+  light: {
+    bg: '#FFFFFF',
+    panel: '#F3F3F3',
+    text: '#000000',
+    subtext: '#4A4A4A',
+    red: '#E50914',
+  },
+};
+
+export const ThemeContext = createContext();
+
+const STORAGE_KEY = 'streamnow.theme';
+
+export function ThemeProvider({ children }) {
+  const systemScheme = useColorScheme(); // 'light' | 'dark'
+  const [mode, setMode] = useState(systemScheme || 'dark');
+  const [booted, setBooted] = useState(false);
+
+  // Load persisted theme
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          setMode(stored);
+        } else {
+          // fallback to system scheme
+          setMode(systemScheme || 'dark');
+        }
+      } catch (e) {
+        console.warn('Failed to load theme', e);
+      }
+      setBooted(true);
+    })();
+  }, [systemScheme]);
+
+  // Save theme choice
+  const persistMode = async (newMode) => {
+    setMode(newMode);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, newMode);
+      // Optionally also store in SecureStore
+      await SecureStore.setItemAsync(STORAGE_KEY, newMode);
+    } catch (e) {
+      console.warn('Failed to save theme', e);
+    }
+  };
+
+  const value = useMemo(() => ({
+    theme: palettes[mode],
+    mode,
+    setMode: persistMode,
+  }), [mode]);
+
+  if (!booted) return null; // or splash screen
+
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+🌓 Toggle button example
+jsx
+// src/components/Footer.js
+import React, { useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { ThemeContext } from '../theme/ThemeContext';
+
+export default function Footer({ onSignOut }) {
+  const { mode, setMode } = useContext(ThemeContext);
+
+  return (
+    <View style={styles.container}>
+      {/* ... other footer content ... */}
+      <TouchableOpacity
+        style={styles.toggle}
+        onPress={() => setMode(mode === 'dark' ? 'light' : 'dark')}
+      >
+        <Text style={styles.toggleText}>
+          Switch to {mode === 'dark' ? 'Light' : 'Dark'} Mode
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  toggle: { marginTop: 12, padding: 10, backgroundColor: '#E50914', borderRadius: 8 },
+  toggleText: { color: '#fff', fontWeight: '600' },
+});
+✅ Behavior
+On app start, the provider checks AsyncStorage (and optionally SecureStore) for a saved theme.
+
+If found, it overrides the system scheme.
+
+When the user toggles, the new mode is saved immediately.
+
+On next restart, the app uses the persisted mode.

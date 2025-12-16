@@ -1,0 +1,261 @@
+React Native enhancements: deep linking, inline player, persisted auth, and theming
+Here’s how to add YouTube deep linking, an inline player, secure persisted auth, and a light/dark theme system with context.
+
+Deep linking to the YouTube app
+Open in YouTube if available, fallback to browser
+jsx
+// src/utils/openYouTube.js
+import { Linking } from 'react-native';
+
+export async function openYouTube(videoIdOrUrl) {
+  const id = videoIdOrUrl.includes('youtube.com')
+    ? new URL(videoIdOrUrl).searchParams.get('v')
+    : videoIdOrUrl;
+
+  const appUrl = `youtube://www.youtube.com/watch?v=${id}`;
+  const webUrl = `https://www.youtube.com/watch?v=${id}`;
+
+  const supported = await Linking.canOpenURL(appUrl);
+  if (supported) {
+    return Linking.openURL(appUrl);
+  }
+  return Linking.openURL(webUrl);
+}
+Optional: navigation deep link config
+jsx
+// App.js (add linking)
+const linking = {
+  prefixes: ['streamnow://', 'https://streamnow.example.com'],
+  config: {
+    screens: {
+      Home: 'home',
+      Player: 'player/:id',
+    },
+  },
+};
+
+<NavigationContainer linking={linking}>
+  {/* ... */}
+</NavigationContainer>
+Inline player using react-native-webview
+Install
+npm i react-native-webview
+
+Player screen embedding YouTube (inline)
+jsx
+// src/screens/Player.js
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { WebView } from 'react-native-webview';
+
+export default function Player({ route }) {
+  const { video } = route.params; // { id, title }
+  const embedUrl = useMemo(
+    () => `https://www.youtube.com/embed/${video.id}?autoplay=1&playsinline=1`,
+    [video.id]
+  );
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{video.title}</Text>
+      <View style={styles.player}>
+        <WebView
+          source={{ uri: embedUrl }}
+          allowsInlineMediaPlayback
+          mediaPlaybackRequiresUserAction={false}
+          javaScriptEnabled
+          domStorageEnabled
+          startInLoadingState
+          style={{ flex: 1 }}
+        />
+      </View>
+      <Text style={styles.note}>If playback stutters, tap the header back button to exit.</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  title: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  player: { height: 220, borderRadius: 8, overflow: 'hidden', backgroundColor: '#000' },
+  note: { color: '#B3B3B3', marginTop: 8 },
+});
+Persisted auth state and secure credential storage
+Storage approach
+Use AsyncStorage to persist session (non-sensitive data).
+
+Use SecureStore (Expo) or react-native-keychain (bare RN) for sensitive tokens.
+
+Session manager
+jsx
+// src/services/session.js
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store'; // Expo; or use react-native-keychain in bare RN
+
+const SESSION_KEY = 'streamnow.session';
+const TOKEN_KEY = 'streamnow.token';
+
+export async function saveSession(profile) {
+  await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(profile));
+}
+export async function loadSession() {
+  const raw = await AsyncStorage.getItem(SESSION_KEY);
+  return raw ? JSON.parse(raw) : null;
+}
+export async function clearSession() {
+  await AsyncStorage.removeItem(SESSION_KEY);
+  await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
+
+export async function saveToken(token) {
+  await SecureStore.setItemAsync(TOKEN_KEY, token);
+}
+export async function getToken() {
+  return SecureStore.getItemAsync(TOKEN_KEY);
+}
+App container: bootstrap persisted auth
+jsx
+// App.js (auth bootstrap)
+import React, { useMemo, useState, useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { saveSession, loadSession, clearSession, saveToken } from './src/services/session';
+// ...navigation imports
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [booted, setBooted] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const existing = await loadSession();
+      if (existing) setUser(existing);
+      setBooted(true);
+    })();
+  }, []);
+
+  const auth = useMemo(() => ({
+    signInLocal: async (email, password) => {
+      if (!email?.includes('@') || password?.length < 6) throw new Error('Invalid credentials');
+      const profile = { email, provider: 'local' };
+      await saveSession(profile);
+      setUser(profile);
+    },
+    signInGoogle: async (profile, accessToken) => {
+      await saveSession(profile);
+      if (accessToken) await saveToken(accessToken);
+      setUser(profile);
+    },
+    signOut: async () => {
+      await clearSession();
+      setUser(null);
+    },
+    user,
+  }), [user]);
+
+  if (!booted) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#141414', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#E50914" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      {/* stack with SignIn/Home/Player */}
+    </NavigationContainer>
+  );
+}
+Sign-in: pass real Google token to session
+jsx
+// src/screens/SignIn.js (onGoogle)
+const onGoogle = async () => {
+  const authUrl = /* build URL */;
+  const result = await AuthSession.startAsync({ authUrl });
+  if (result.type === 'success' && result.params?.access_token) {
+    // Fetch profile minimally
+    const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${result.params.access_token}` },
+    });
+    const profile = await res.json(); // { email, name, picture, ... }
+    await auth.signInGoogle({ email: profile.email, name: profile.name, provider: 'google' }, result.params.access_token);
+  }
+};
+Theming with context and automatic light/dark
+Theme context
+jsx
+// src/theme/ThemeContext.js
+import React, { createContext, useMemo } from 'react';
+import { useColorScheme } from 'react-native';
+
+const palettes = {
+  dark: {
+    bg: '#141414',
+    panel: '#221F1F',
+    text: '#FFFFFF',
+    subtext: '#B3B3B3',
+    red: '#E50914',
+  },
+  light: {
+    bg: '#FFFFFF',
+    panel: '#F3F3F3',
+    text: '#000000',
+    subtext: '#4A4A4A',
+    red: '#E50914',
+  },
+};
+
+export const ThemeContext = createContext({ theme: palettes.dark });
+
+export function ThemeProvider({ children, mode }) {
+  const scheme = useColorScheme(); // 'light' | 'dark' | null
+  const resolved = mode || scheme || 'dark';
+  const value = useMemo(() => ({ theme: palettes[resolved], mode: resolved }), [resolved]);
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+Wrap App with provider
+jsx
+// App.js
+import { ThemeProvider } from './src/theme/ThemeContext';
+
+export default function App() {
+  // ...
+  return (
+    <ThemeProvider>
+      <NavigationContainer>
+        {/* stack */}
+      </NavigationContainer>
+    </ThemeProvider>
+  );
+}
+Consume theme in components
+jsx
+// src/components/MediaCarousel.js
+import React, { useContext } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import FastImage from 'react-native-fast-image';
+import { ThemeContext } from '../theme/ThemeContext';
+
+export default function MediaCarousel({ title, items, onPressItem }) {
+  const { theme } = useContext(ThemeContext);
+  return (
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+      {/* ... */}
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  container: { paddingVertical: 16, paddingHorizontal: 16 },
+  title: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
+});
+Updated “Play” behavior with deep linking fallback
+jsx
+// In any component (e.g., MediaCarousel onPressItem)
+import { openYouTube } from '../utils/openYouTube';
+
+// Open native app if available, else inline Player
+onPressItem={(video) => {
+  openYouTube(video.id)
+    .catch(() => navigation.navigate('Player', { video }));
+}}

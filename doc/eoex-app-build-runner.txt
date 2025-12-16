@@ -1,0 +1,16 @@
+use the doc folder to implement the instructions in the file [eoex-complete-app-prompt.txt]. if the process stalls or is interrupted then save the status of the implementation stage and resume from there
+
+the main steps to implement are:
+
+Prompt for the app name and project folder location.
+Initialize git, create README, venv, VSCode workspace, and branches.
+Prompt for remote repo, push initial commit and branches.
+Create the workflow automation script ([app-name]-saves.sh).
+Create the project structure: /frontend, /backend, /database, /docs, /scripts.
+Scaffold the frontend (React Native web/mobile, Netflix-style UI).
+Scaffold the backend (FastAPI, MySQL).
+Scaffold the database (schema, seed data).
+Dockerize all services.
+Document setup and workflow.
+Test and finalize implementation.
+Generate a reusable AI prompt for the workflow.

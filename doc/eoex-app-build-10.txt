@@ -1,0 +1,147 @@
+Here’s how you can stagger with different delays per section so the rhythm feels more organic. Instead of a uniform stagger, each section gets its own delay before starting its parallel animation group.
+
+🔧 Implementation
+We’ll use Animated.sequence with Animated.delay for each section, or simply start each group with a different delay. Each group animates opacity + translateY + scale in parallel.
+
+Home.js with custom delays
+jsx
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, ScrollView, Easing } from 'react-native';
+import Hero from '../components/Hero';
+import MediaCarousel from '../components/MediaCarousel';
+import Features from '../components/Features';
+import FAQ from '../components/FAQ';
+import Footer from '../components/Footer';
+import { videos } from '../data/videos';
+
+export default function Home({ navigation }) {
+  // Animated values
+  const heroOpacity = useRef(new Animated.Value(0)).current;
+  const heroTranslate = useRef(new Animated.Value(30)).current;
+  const heroScale = useRef(new Animated.Value(0.95)).current;
+
+  const carouselOpacity = useRef(new Animated.Value(0)).current;
+  const carouselTranslate = useRef(new Animated.Value(30)).current;
+  const carouselScale = useRef(new Animated.Value(0.95)).current;
+
+  const featuresOpacity = useRef(new Animated.Value(0)).current;
+  const featuresTranslate = useRef(new Animated.Value(30)).current;
+  const featuresScale = useRef(new Animated.Value(0.95)).current;
+
+  useEffect(() => {
+    // Hero starts after 250ms
+    const heroAnim = Animated.sequence([
+      Animated.delay(250),
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroTranslate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]);
+
+    // Carousel starts after 300ms
+    const carouselAnim = Animated.sequence([
+      Animated.delay(300),
+      Animated.parallel([
+        Animated.timing(carouselOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(carouselTranslate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(carouselScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]);
+
+    // Features start after 350ms
+    const featuresAnim = Animated.sequence([
+      Animated.delay(350),
+      Animated.parallel([
+        Animated.timing(featuresOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(featuresTranslate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(featuresScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]);
+
+    // Run all animations together
+    Animated.parallel([heroAnim, carouselAnim, featuresAnim]).start();
+  }, []);
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Animated.View style={{ opacity: heroOpacity, transform: [{ translateY: heroTranslate }, { scale: heroScale }] }}>
+        <Hero />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: carouselOpacity, transform: [{ translateY: carouselTranslate }, { scale: carouselScale }] }}>
+        <MediaCarousel
+          title="Trending Now"
+          items={videos.slice(0, 5)}
+          onPressItem={(video) => navigation.navigate('Player', { video })}
+        />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: featuresOpacity, transform: [{ translateY: featuresTranslate }, { scale: featuresScale }] }}>
+        <Features />
+      </Animated.View>
+
+      <FAQ />
+      <Footer />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingBottom: 24,
+  },
+});
+🎨 Behavior
+Hero waits 250ms, then fades/slides/scales in.
+
+Carousel waits 300ms, overlapping with Hero’s animation.
+
+Features waits 350ms, overlapping with both.
+
+The rhythm feels more organic because delays vary slightly instead of being uniform.

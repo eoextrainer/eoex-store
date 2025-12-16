@@ -1,0 +1,126 @@
+Here’s the overlay version of the splash screen: EOEX animates upward, then fades out while the Home screen is already mounted underneath. This avoids any flicker and gives a cinematic transition.
+
+🔧 Overlay Splash Implementation
+We’ll render both SplashScreen and the main app simultaneously, with the splash absolutely positioned on top. When the fade‑out completes, we unmount the splash.
+
+SplashScreen.js (overlay with scale + letterSpacing polish)
+jsx
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+
+const { height } = Dimensions.get('window');
+
+export default function SplashScreen({ onFinish }) {
+  const translateY = useRef(new Animated.Value(100)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const scale = useRef(new Animated.Value(0.8)).current;
+  const letterSpacing = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Rise + polish animations
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: -50,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(letterSpacing, {
+        toValue: 2,
+        duration: 1500,
+        useNativeDriver: false, // letterSpacing not supported by native driver
+      }),
+    ]).start(() => {
+      // Fade out with adjustable delay
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 1000,
+        delay: 700, // adjust delay for pacing
+        useNativeDriver: true,
+      }).start(() => {
+        if (onFinish) onFinish();
+      });
+    });
+  }, [translateY, opacity, scale, letterSpacing, onFinish]);
+
+  return (
+    <Animated.View style={[styles.overlay, { opacity }]}>
+      <View style={styles.baseline} />
+      <Animated.Text
+        style={[
+          styles.brand,
+          {
+            transform: [{ translateY }, { scale }],
+            letterSpacing: letterSpacing,
+          },
+        ]}
+      >
+        EOEX
+      </Animated.Text>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: height / 2,
+    zIndex: 999, // ensure on top
+  },
+  baseline: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#fff',
+  },
+  brand: {
+    position: 'absolute',
+    bottom: 0,
+    fontSize: 48,
+    fontWeight: '900',
+    color: '#E50914',
+  },
+});
+App.js integration (overlay style)
+jsx
+import React, { useState, useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import SplashScreen from './src/screens/SplashScreen';
+import { ThemeProvider } from './src/theme/ThemeContext';
+import Home from './src/screens/Home';
+
+export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    // Simulate boot process (auth/theme load)
+    setTimeout(() => {
+      // Let Splash handle fade-out itself
+    }, 2000);
+  }, []);
+
+  return (
+    <ThemeProvider>
+      <NavigationContainer>
+        <Home />
+        {showSplash && (
+          <SplashScreen onFinish={() => setShowSplash(false)} />
+        )}
+      </NavigationContainer>
+    </ThemeProvider>
+  );
+}
+🎨 Behavior
+EOEX starts below the baseline, rises up, scales slightly, and letter spacing expands.
+
+After a short delay (700ms adjustable), the splash fades out over 1s.
+
+Because the Home screen is already mounted underneath, the fade reveals it seamlessly.
+
+Once opacity hits 0, the splash unmounts.

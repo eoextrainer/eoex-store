@@ -1,0 +1,105 @@
+Here’s how you can add a fade‑out transition so your splash screen blends smoothly into the Home screen once the app finishes booting.
+
+🔧 Approach
+We’ll animate the opacity of the splash container. When booted flips to true, we trigger a fade‑out, then unmount the splash and render the main app.
+
+SplashScreen.js (with fade‑out)
+jsx
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+
+const { height } = Dimensions.get('window');
+
+export default function SplashScreen({ onFinish }) {
+  const translateY = useRef(new Animated.Value(100)).current; // start below baseline
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    // Rise animation
+    Animated.timing(translateY, {
+      toValue: -50,
+      duration: 1500,
+      useNativeDriver: true,
+    }).start(() => {
+      // After rise, fade out
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 800,
+        delay: 500, // pause briefly before fade
+        useNativeDriver: true,
+      }).start(() => {
+        if (onFinish) onFinish();
+      });
+    });
+  }, [translateY, opacity, onFinish]);
+
+  return (
+    <Animated.View style={[styles.container, { opacity }]}>
+      <View style={styles.baseline} />
+      <Animated.Text style={[styles.brand, { transform: [{ translateY }] }]}>
+        EOEX
+      </Animated.Text>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: height / 2,
+  },
+  baseline: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#fff',
+  },
+  brand: {
+    position: 'absolute',
+    bottom: 0,
+    fontSize: 48,
+    fontWeight: '900',
+    color: '#E50914',
+    letterSpacing: 2,
+  },
+});
+App.js integration
+jsx
+import React, { useState, useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import SplashScreen from './src/screens/SplashScreen';
+import { ThemeProvider } from './src/theme/ThemeContext';
+import Home from './src/screens/Home';
+
+export default function App() {
+  const [booted, setBooted] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    // Simulate boot process (auth/theme load)
+    setTimeout(() => setBooted(true), 2000);
+  }, []);
+
+  return (
+    <ThemeProvider>
+      {showSplash && !booted ? (
+        <SplashScreen onFinish={() => setShowSplash(false)} />
+      ) : (
+        <NavigationContainer>
+          {/* your stack navigator */}
+          <Home />
+        </NavigationContainer>
+      )}
+    </ThemeProvider>
+  );
+}
+🎨 Behavior
+EOEX rises from below the baseline to 50px above.
+
+After a short pause, the entire splash fades out over 0.8s.
+
+Once opacity hits 0, onFinish unmounts the splash and renders the Home screen.
+
+The transition feels cinematic and avoids abrupt flicker.

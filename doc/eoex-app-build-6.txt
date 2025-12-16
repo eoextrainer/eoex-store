@@ -1,0 +1,132 @@
+Perfect — let’s extend the cross‑fade so that each Home section (Hero, Carousel, Features, etc.) fades in sequentially. This creates a layered reveal effect, like a cinematic staggered entrance.
+
+🔧 Approach
+Wrap each section in an Animated.View.
+
+Use a shared Animated.Value for opacity, but stagger the animations with delays.
+
+Trigger the stagger when the splash fade‑out begins.
+
+Home.js with staggered fade‑in
+jsx
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, ScrollView } from 'react-native';
+import Hero from '../components/Hero';
+import MediaCarousel from '../components/MediaCarousel';
+import Features from '../components/Features';
+import FAQ from '../components/FAQ';
+import Footer from '../components/Footer';
+import { videos } from '../data/videos';
+
+export default function Home({ navigation }) {
+  const heroOpacity = useRef(new Animated.Value(0)).current;
+  const carouselOpacity = useRef(new Animated.Value(0)).current;
+  const featuresOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Staggered fade‑in sequence
+    Animated.stagger(400, [
+      Animated.timing(heroOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(carouselOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(featuresOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [heroOpacity, carouselOpacity, featuresOpacity]);
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Animated.View style={{ opacity: heroOpacity }}>
+        <Hero />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: carouselOpacity }}>
+        <MediaCarousel
+          title="Trending Now"
+          items={videos.slice(0, 5)}
+          onPressItem={(video) => navigation.navigate('Player', { video })}
+        />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: featuresOpacity }}>
+        <Features />
+      </Animated.View>
+
+      <FAQ />
+      <Footer />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingBottom: 24,
+  },
+});
+App.js (cross‑fade with stagger trigger)
+jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { Animated, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import SplashScreen from './src/screens/SplashScreen';
+import { ThemeProvider } from './src/theme/ThemeContext';
+import Home from './src/screens/Home';
+
+export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const homeOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Start fade‑in for Home wrapper
+    setTimeout(() => {
+      Animated.timing(homeOpacity, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
+    }, 2000);
+  }, [homeOpacity]);
+
+  return (
+    <ThemeProvider>
+      <NavigationContainer>
+        <Animated.View style={[styles.homeWrapper, { opacity: homeOpacity }]}>
+          <Home />
+        </Animated.View>
+        {showSplash && (
+          <SplashScreen onFinish={() => setShowSplash(false)} />
+        )}
+      </NavigationContainer>
+    </ThemeProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  homeWrapper: {
+    flex: 1,
+  },
+});
+🎨 Behavior
+EOEX splash animates upward, then fades out.
+
+As splash fades, the Home wrapper fades in.
+
+Inside Home, sections fade in staggered:
+
+Hero first (opacity 0 → 1).
+
+Carousel next (400ms later).
+
+Features last (another 400ms later).
+
+FAQ and Footer appear normally after.

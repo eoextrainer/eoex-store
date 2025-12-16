@@ -1,0 +1,206 @@
+as a senior mobile, web software developer and release manager
+
+objective: Generate a complete, production-ready web and hybrid mobile/web application for the EOEX App Store (or a user-specified app name), including
+backend, frontend, database, Dockerization, and DevOps workflows, using the following requirements and detailed step-by-step implementation.
+
+create a workflow that
+    prompts for the software project folder location,
+    changes the current directory to this folder,
+    Prompt: Please provide the name of the app to be created
+    checks if this directory has a git repo.
+        if not then initialise this local repo.
+    create a readme file with the message "Hello from EOEX. this is [app name] application.".
+    create in this directory the python virtual environment venv.
+    save the vscode workspace.
+    create the following branches [change master to main, develop, feature, fix, test, ready, archive, int, qa, prod].
+    ask the user for the target remote repo location.
+    create a first commit and push and the changes and the branches to the remote repo using the appropriate message.
+    then create a workflow in the form of a bash script called [app-name]-saves.sh that will automatically after every major changes to the application: save, stash, stage, commit + message, push, pull request and merge request the latest changes.
+    dockerise the entire project folder.
+
+
+
+in order to reuse this entire procedure create a an artificial intelligence prompt in markdown format to reproduce the entire setup process.
+
+application development workflow
+
+delivers a complete, production-ready scaffold for a Netflix-style mobile UI in React Native. It includes dark UI branding, a cinematic splash, cross-fade transitions, staggered section reveals with slide and zoom, secure auth storage, deep linking to YouTube, an inline WebView player, theme context with persistence and manual toggle, navigation, and performance optimizations.
+
+Project Structure:
+- `/frontend` (React Native for hybrid mobile/web, Netflix-style UI, see below)
+- `/backend` (Python FastAPI)
+- `/database` (MySQL, user table with admin/user roles)
+- Dockerized for all services
+- Git with custom workflow and branch structure
+
+Initialize Project Structure
+    Create the following folders: /frontend, /backend, /database, /docs, /scripts
+    Initialize a Git repository and set up the required branch structure
+    Add .gitignore files as needed
+    Run: ./scripts/app-changes.sh "Initialize project structure"
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+ Frontend:
+- Use the provided React Native Netflix-style UI template (see `eoex-app-frontend-template.txt`)
+- Splash screen, home screen, carousels, secure auth, deep linking, theme context, and all features as described
+- Must run as a web app (Chrome) and as a mobile app (Android emulator)
+- Use HTML, CSS, JavaScript, and React Native (with web support via `react-native-web`)
+
+Scaffold a React Native project with web support (react-native-web)
+Add dependencies: react, react-dom, react-native, react-native-web, react-navigation, etc.
+Implement the Netflix-style UI using the provided template
+Add HTML, CSS, and JavaScript files as needed for web compatibility
+Implement splash screen, home, carousels, authentication, deep linking, and theme context
+Ensure the app runs in both Chrome (web) and Android emulator (mobile)
+Run: ./scripts/app-changes.sh "Implement frontend hybrid app"
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+ Backend:
+- Python FastAPI with endpoints for user management and app listing
+- Connect to MySQL database
+- Use Python and relevant dependencies (FastAPI, SQLAlchemy, etc.)
+
+Scaffold a FastAPI project in Python
+Add dependencies: fastapi, uvicorn, sqlalchemy, pydantic, mysql-connector-python, etc.
+Implement endpoints for user registration, authentication, app listing, and admin features
+Connect to the MySQL database
+Run: ./scripts/app-changes.sh "Implement backend API"
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+ DevOps:
+- Docker Compose for all services
+- Git workflow automation script (`app-changes.sh`)
+- Branches: main, develop, feature, fix, test, ready, archive, prod, int, qa
+- At each implementation stage, execute `app-changes.sh` to commit and document progress
+
+Implement the app-changes.sh script to automate Git workflow, commit, and push at each stage
+Document the workflow in Markdown
+Run: ./scripts/app-changes.sh "Document and automate workflow"
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+ Documentation:
+- README.md for each major folder- Markdown documentation for setup, usage, and workflows
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+ Database:
+- MySQL with `user` table (admin, user roles)
+- Default admin user
+- Provide SQL schema and seed data
+
+Create MySQL schema and tables (user, apps, etc.)
+Add seed data for default admin and sample apps
+Provide SQL scripts for schema and seed
+Run: ./scripts/app-changes.sh "Setup database schema and seed data"
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+ Dockerization
+Write Dockerfiles for frontend, backend, and database
+Create a docker-compose.yml to orchestrate all services
+Ensure all services can be built and run together
+Run: ./scripts/app-changes.sh "Add Docker and Compose files"
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+Testing & Execution
+Provide instructions to run the app in Chrome (web) and Android emulator (mobile)
+Test all endpoints and UI features
+Run: ./scripts/app-changes.sh "Test and finalize implementation"
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+
+ Dependencies
+Frontend: react, react-dom, react-native, react-native-web, react-navigation, styled-components, axios, etc.
+Backend: fastapi, uvicorn, sqlalchemy, pydantic, mysql-connector-python, etc.
+Database: MySQL 8+
+DevOps: Docker, Docker Compose, Git
+
+    << ===== run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages ====== >>
+
+
+
+    the application will be a web application
+    the application will use only the following tech stack:
+        htmls, css, javascript on the frontent + related frameworks and dependencies
+        mysql database + related frameworks and dependencies
+        python + related frameworks and dependencies
+        docker + compose + dockerhub [https://hub.docker.com/repositories/eoex] - create a repository and push the app to the docker hub repo
+    the application architecture will contain:
+        - frontend
+            splash screen
+                black background
+                white baseline at the center of the screen
+                the EOEX brand name (in bold red netflix colours) reveals itself slowly from beneath the baseline until it rises a few pixels above the base line, then vibrates horizontally for 7 seconds
+                the App name appears a few pixels below the baseline in a smooth fashion
+                the entire spalsh screen closes in on itself like an old television set turning off
+                then the home screen appears
+                go to the project doc/ folder
+                locate the eoex-app-splashscreen-1.txt file
+                use it for the design of the splashscreen
+
+            build the app frontend splashscreen and run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages
+
+            home screen
+                the home screen uses the same design, layout, colour palette and fonts as the https://www.netflix.com website
+                the home screen uses the following design patterns found in the file: eoex-app-frontend-template.txt - this file is located inside the project folder docs/ folder
+                page header [10% of the screen height]:
+                    contains the app name and logo in the top left corner
+                    contains the [sign in | login] options in the top right corner
+                section 1: hero caroussel
+                    here we see a medium size horizontal video caroussel using 5 video urls from the file [eoex-app-frontend-template.txt]
+                    the caroussel shows only one video at a time and after 2 seconds it toggles cycically to the next
+                section 2: netflix style horizontal video tile grid (1x6) per product family
+                    product families:
+                        - health & fitness
+                        - personal finances
+                        - productivity
+                        - travel & hospitality
+                        - entertainments
+                        - shopping
+                go to the project doc/ folder
+                locate the eoex-app-build-1.txt file
+                use it for the design of the home screen
+
+            build the app frontend home screen and run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages
+
+        - backend
+
+        build the complete app backend scaffolding and run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages
+
+        - (future) API integrations
+
+        build the complete app api integration scaffolding and run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages
+
+        - authentication (using google accounts)
+
+        build the complete app authentication scaffolding and run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages
+
+        - database
+            the database data model must contain tables for:
+                users (save their google credentials), and create on platform admin user
+                apps (represented by tiles in the home screen) [name, vendor, version, target platform, downloads, size, host source, revisions, bugs, etc..]
+                store (users of this platform, downloads)
+                other tables will be added
+
+        build the complete app database scaffolding and run the [app-name]-saves.sh script to save and push the changes uing the relevant commit messages
+
+
+
+in order to reuse this entire procedure create a an artificial intelligence prompt in markdown format to reproduce the entire application development workflow process.
+
+
+ Instructions for AI
+Prompt the user for the app name and use it throughout the project.
+Generate all code, configuration, and documentation files required for a full-stack EOEX App Store (or user-specified app) as described
+above.
+Use the provided frontend template for all UI/UX and component structure.
+Ensure all Docker, backend, and database files are compatible and ready to run.
+Implement the Git workflow and automation script as described.
+At each major implementation stage, execute app-changes.sh to commit and document progress.
+Output the project as a ready-to-run monorepo.

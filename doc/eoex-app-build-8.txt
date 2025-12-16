@@ -1,0 +1,192 @@
+Here’s how to add a slight scale‑up (zoom‑in effect) to each section so they fade, slide, and gently enlarge as they enter. This combination makes the reveal feel layered and cinematic.
+
+🔧 Implementation
+We’ll animate three properties per section:
+
+opacity: 0 → 1
+
+translateY: 20–40px → 0 (slide up)
+
+scale: 0.95 → 1 (zoom‑in)
+
+Use Animated.parallel for each section, and Animated.stagger to sequence them.
+
+Home.js with fade + slide + scale
+jsx
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, ScrollView, Easing } from 'react-native';
+import Hero from '../components/Hero';
+import MediaCarousel from '../components/MediaCarousel';
+import Features from '../components/Features';
+import FAQ from '../components/FAQ';
+import Footer from '../components/Footer';
+import { videos } from '../data/videos';
+
+export default function Home({ navigation }) {
+  // Animated values for each section
+  const heroOpacity = useRef(new Animated.Value(0)).current;
+  const heroTranslate = useRef(new Animated.Value(30)).current;
+  const heroScale = useRef(new Animated.Value(0.95)).current;
+
+  const carouselOpacity = useRef(new Animated.Value(0)).current;
+  const carouselTranslate = useRef(new Animated.Value(30)).current;
+  const carouselScale = useRef(new Animated.Value(0.95)).current;
+
+  const featuresOpacity = useRef(new Animated.Value(0)).current;
+  const featuresTranslate = useRef(new Animated.Value(30)).current;
+  const featuresScale = useRef(new Animated.Value(0.95)).current;
+
+  const faqOpacity = useRef(new Animated.Value(0)).current;
+  const faqTranslate = useRef(new Animated.Value(30)).current;
+  const faqScale = useRef(new Animated.Value(0.95)).current;
+
+  const footerOpacity = useRef(new Animated.Value(0)).current;
+  const footerTranslate = useRef(new Animated.Value(30)).current;
+  const footerScale = useRef(new Animated.Value(0.95)).current;
+
+  useEffect(() => {
+    // Staggered sequence with fade, slide, and scale
+    Animated.stagger(300, [
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroTranslate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(carouselOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(carouselTranslate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(carouselScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(featuresOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(featuresTranslate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(featuresScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(faqOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(faqTranslate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(faqScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(footerOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(footerTranslate, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(footerScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Animated.View style={{ opacity: heroOpacity, transform: [{ translateY: heroTranslate }, { scale: heroScale }] }}>
+        <Hero />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: carouselOpacity, transform: [{ translateY: carouselTranslate }, { scale: carouselScale }] }}>
+        <MediaCarousel
+          title="Trending Now"
+          items={videos.slice(0, 5)}
+          onPressItem={(video) => navigation.navigate('Player', { video })}
+        />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: featuresOpacity, transform: [{ translateY: featuresTranslate }, { scale: featuresScale }] }}>
+        <Features />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: faqOpacity, transform: [{ translateY: faqTranslate }, { scale: faqScale }] }}>
+        <FAQ />
+      </Animated.View>
+
+      <Animated.View style={{ opacity: footerOpacity, transform: [{ translateY: footerTranslate }, { scale: footerScale }] }}>
+        <Footer />
+      </Animated.View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingBottom: 24,
+  },
+});
+🎨 Behavior
+Each section starts slightly lower (translateY: 20–40px), smaller (scale: 0.95), and invisible (opacity: 0).
+
+As it animates in, it fades, slides up, and zooms to full size.
+
+Sections cascade in sequence: Hero → Carousel → Features → FAQ → Footer.

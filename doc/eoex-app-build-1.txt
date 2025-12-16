@@ -1,0 +1,449 @@
+Build a responsive, accessible Netflix-style landing page using HTML, CSS, and vanilla JavaScript (no build step required). Emulate the visual style, layout, and interactions of netflix.com  while avoiding any trademarked logos or proprietary fonts. Include semantic markup and WCAG AA contrast.
+
+Requirements:
+
+Layout:
+
+Hero section with dark background, subtle gradient, centered headline, subhead, and an email signup row with input + primary CTA.
+
+A horizontal “Trending Now” carousel with poster cards and left/right chevrons, snapping scroll on desktop, swipe on mobile.
+
+A “More reasons to join” features grid (4 cards) with icon, title, and short copy.
+
+An FAQ accordion list (expand/collapse with smooth transitions, only one open at a time).
+
+A footer with multi-column links, language selector, legal notices, and small-print copy.
+
+Visuals:
+
+Use the brand kit colors and type below (substitute open-source fonts). Strong emphasis on dark UI, bold red CTAs, clean typographic scale.
+
+Poster cards: aspect ratio ~2:3, hover reveals subtle lift/shadow, focus ring visible for keyboard nav.
+
+CTA buttons: high-contrast red background, white text, rounded-rectangle shape, prominent hover/focus states.
+
+Accessibility:
+
+Semantic elements (header, main, section, nav, footer, h1–h3, ul/li, button).
+
+Keyboard navigable carousels (tab focusable cards, arrow-key support, visible focus).
+
+aria-expanded and aria-controls on accordion buttons; proper labels for inputs.
+
+Behavior:
+
+Email field: basic format validation and inline error messaging.
+
+Carousel: click chevrons scroll by one “page”; drag/swipe on touch; snapping behavior.
+
+Accordion: animated height transition; toggle icon state; collapses siblings when one opens.
+
+Responsiveness:
+
+Mobile-first with breakpoints at 600px, 900px, and 1200px.
+
+Grid to flex as needed; carousels convert to scrollable rows on small screens.
+
+Assets:
+
+Use placeholder posters (solid color blocks or royalty-free images).
+
+Replace any Netflix logos with a generic wordmark (text-only).
+
+Deliverables:
+
+index.html  with semantic sections (hero, carousel, features, faq, footer).
+
+styles.css  with variables for colors/spacing/typography; uses CSS Grid/Flexbox; prefers prefers-reduced-motion.
+
+app.js  for carousel, accordion, email validation.
+
+A11y: ensure focus styles, aria attributes, and keyboard controls.
+
+Implementation details:
+
+CSS: define variables for colors and spacing; use container widths max 1200px; utility classes for spacing; clamp() for fluid type.
+
+Carousel: overflow hidden container, inner track with cards; JS calculates card width and scroll positions; debounce resize.
+
+Accordion: CSS transition on max-height; JS measures content height; add/remove “is-open” class.
+
+Form: email regex for simple check; show error message under input; disable submit until valid.
+
+No external build tools; keep it simple and dependency-free.
+
+Brand kit emulating Netflix’s visual style
+Colors
+Primary red: #E50914
+
+Background black: #000000
+
+Very dark gray (page background): #141414
+
+White (text on red/dark): #FFFFFF
+
+Mid gray (secondary text): #B3B3B3
+
+Accent dark (panels/cards): #221F1F
+
+Tip: Use high contrast on text (white on black/dark). Reserve red for primary CTAs, focus accents, and highlights.
+
+Typography
+Primary font (substitute): Inter, “Helvetica Neue”, Arial, sans-serif
+
+Headline scale:
+
+H1: clamp(2rem, 2.5vw + 1rem, 3.5rem), 700
+
+H2: clamp(1.5rem, 2vw + 0.5rem, 2.5rem), 700
+
+H3: clamp(1.25rem, 1.5vw + 0.5rem, 1.75rem), 600
+
+Body: 1rem (16px), 400–500, tight leading on hero, relaxed leading on body (1.5)
+
+Letter-spacing: Slightly tightened for headlines; normal for body
+
+Fallback guidance: If Inter isn’t available, use system UI sans or “Helvetica Neue”
+
+Spacing and layout
+Container max-width: 1200px; side padding: clamp(1rem, 4vw, 3rem)
+
+Vertical rhythm: 24/32/48 spacing steps; larger spacing in hero and between sections
+
+Card grid: 12-column on desktop; stack to 2–4 columns on tablet; single column on mobile
+
+Components
+Hero: Large bold headline, supportive subcopy, email input + “Get Started” button in a single row on desktop, stacked on mobile.
+
+CTA button: Red background (#E50914), white text, 600 weight, 12px–16px radius, box-shadow on hover, visible outline on focus (#FFFFFF 2px).
+
+Carousel card: 2:3 aspect, subtle gradient overlay, hover lift (transform: translateY(-2px)), focus ring.
+
+Accordion: Dark panel background (#221F1F), white text; chevron rotates on open; smooth height transition.
+
+Footer: Multi-column link lists, muted gray text, language selector styled as minimal select; legal small-print in lighter gray.
+
+Starter code snippets
+HTML skeleton
+html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StreamNow</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <div class="brand">StreamNow</div>
+        <button class="sign-in">Sign In</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-content">
+          <h1>Unlimited movies, TV shows, and more</h1>
+          <p>Starts at €7.99. Cancel anytime.</p>
+          <form class="signup" novalidate>
+            <label for="email" class="visually-hidden">Email address</label>
+            <input id="email" name="email" type="email" placeholder="Email address" required />
+            <button type="submit" class="cta">Get Started</button>
+            <p class="error" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+
+      <section class="trending">
+        <div class="container section-head">
+          <h2>Trending Now</h2>
+          <div class="controls">
+            <button class="prev" aria-label="Previous">&#10094;</button>
+            <button class="next" aria-label="Next">&#10095;</button>
+          </div>
+        </div>
+        <div class="carousel" role="region" aria-label="Trending Now">
+          <div class="track">
+            <!-- Repeat poster cards -->
+            <article class="card" tabindex="0">
+              <div class="poster" aria-hidden="true"></div>
+              <h3 class="title">Sample Title</h3>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="features">
+        <div class="container">
+          <h2>More reasons to join</h2>
+          <div class="grid">
+            <article class="feature">
+              <h3>Enjoy on your TV</h3>
+              <p>Watch on Smart TVs, game consoles, and more.</p>
+            </article>
+            <article class="feature">
+              <h3>Download to watch offline</h3>
+              <p>Save your favorites to watch anywhere.</p>
+            </article>
+            <article class="feature">
+              <h3>Watch everywhere</h3>
+              <p>Stream across devices, anytime.</p>
+            </article>
+            <article class="feature">
+              <h3>Create profiles for kids</h3>
+              <p>Family-friendly space with parental controls.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="faq">
+        <div class="container">
+          <h2>Frequently Asked Questions</h2>
+          <ul class="accordion" role="list">
+            <li class="item">
+              <button class="trigger" aria-expanded="false" aria-controls="a1">What is StreamNow?</button>
+              <div id="a1" class="panel" role="region" aria-labelledby="a1">
+                <p>Stream a wide variety of shows and movies on your devices.</p>
+              </div>
+            </li>
+            <!-- More items -->
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="help">Questions? Call +33 1 23 45 67 89</p>
+        <div class="links">
+          <ul>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Account</a></li>
+            <li><a href="#">Media Center</a></li>
+          </ul>
+          <!-- More columns -->
+        </div>
+        <label class="language">
+          <span>Language</span>
+          <select>
+            <option>English</option>
+            <option>Français</option>
+          </select>
+        </label>
+        <small class="legal">© 2025 StreamNow. All rights reserved.</small>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
+CSS variables and core styles
+css
+:root {
+  --color-red: #E50914;
+  --color-black: #000000;
+  --color-bg: #141414;
+  --color-panel: #221F1F;
+  --color-white: #FFFFFF;
+  --color-gray: #B3B3B3;
+
+  --radius: 12px;
+  --shadow: 0 8px 24px rgba(0,0,0,0.4);
+
+  --container: 1200px;
+  --sp-1: 8px; --sp-2: 16px; --sp-3: 24px; --sp-4: 32px; --sp-5: 48px;
+}
+
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body {
+  margin: 0;
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-white);
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+.site-header {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0));
+  position: sticky; top: 0; z-index: 10;
+}
+.site-header .brand { font-weight: 700; letter-spacing: 0.5px; }
+.site-header .sign-in {
+  background: transparent; color: var(--color-white); border: 1px solid var(--color-gray);
+  padding: 8px 16px; border-radius: 8px;
+}
+
+.hero {
+  background: radial-gradient(1200px 400px at 50% 0%, rgba(229,9,20,0.15), transparent),
+              linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.9));
+  padding: var(--sp-5) 0;
+  text-align: center;
+}
+.hero h1 { font-weight: 700; font-size: clamp(2rem, 2.5vw + 1rem, 3.5rem); margin: 0 0 var(--sp-2); }
+.hero p { color: var(--color-gray); margin: 0 0 var(--sp-3); }
+
+.signup {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2);
+  max-width: 720px;
+  margin: 0 auto;
+}
+.signup input {
+  padding: 16px; border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06);
+  color: var(--color-white);
+}
+.signup .cta {
+  background: var(--color-red); color: var(--color-white);
+  border: none; padding: 16px 24px; border-radius: var(--radius);
+  font-weight: 600; box-shadow: var(--shadow); cursor: pointer;
+}
+.signup .cta:hover { filter: brightness(1.1); }
+.signup .cta:focus-visible { outline: 2px solid var(--color-white); outline-offset: 2px; }
+.signup .error { color: #ffb3b3; min-height: 1.25rem; }
+
+.trending .section-head { display: flex; justify-content: space-between; align-items: center; }
+.carousel { overflow: hidden; }
+.track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(160px, 200px);
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+}
+.card {
+  background: var(--color-panel);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.card:focus-visible { outline: 2px solid var(--color-white); outline-offset: 2px; }
+.poster {
+  aspect-ratio: 2 / 3;
+  background: linear-gradient(180deg, #333, #111);
+}
+.card:hover { transform: translateY(-2px); transition: transform 120ms ease; }
+.title { padding: var(--sp-2); font-size: 0.9rem; color: var(--color-gray); }
+
+.features .grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-3);
+}
+.feature {
+  background: var(--color-panel);
+  padding: var(--sp-3);
+  border-radius: var(--radius);
+}
+.feature h3 { margin: 0 0 var(--sp-1); }
+.feature p { margin: 0; color: var(--color-gray); }
+
+.accordion { list-style: none; margin: 0; padding: 0; }
+.item + .item { border-top: 1px solid rgba(255,255,255,0.1); }
+.trigger {
+  width: 100%; text-align: left; padding: var(--sp-2);
+  background: transparent; color: var(--color-white);
+  border: none; font-size: 1.125rem; display: flex; justify-content: space-between; align-items: center;
+}
+.panel {
+  max-height: 0; overflow: hidden;
+  transition: max-height 200ms ease;
+  padding: 0 var(--sp-2);
+}
+.item.is-open .panel { max-height: 300px; padding-bottom: var(--sp-2); }
+
+.site-footer {
+  background: #000;
+  color: var(--color-gray);
+  padding: var(--sp-4) 0;
+}
+.site-footer a { color: var(--color-gray); text-decoration: underline; }
+.site-footer .links { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }
+.language select {
+  background: transparent; color: var(--color-white); border: 1px solid var(--color-gray); border-radius: 8px; padding: 8px;
+}
+
+@media (max-width: 900px) {
+  .features .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .signup { grid-template-columns: 1fr; }
+  .features .grid, .site-footer .links { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+JavaScript behavior
+js
+// Email validation
+const form = document.querySelector('.signup');
+const emailInput = document.querySelector('#email');
+const errorEl = document.querySelector('.signup .error');
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const email = emailInput.value.trim();
+  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!isValid) {
+    errorEl.textContent = 'Please enter a valid email address.';
+    emailInput.setAttribute('aria-invalid', 'true');
+    emailInput.focus();
+  } else {
+    errorEl.textContent = '';
+    emailInput.removeAttribute('aria-invalid');
+    alert('Thank you!'); // replace with real handling
+  }
+});
+
+// Carousel
+const track = document.querySelector('.track');
+const prevBtn = document.querySelector('.prev');
+const nextBtn = document.querySelector('.next');
+
+let cardWidth = 0;
+function updateCardWidth() {
+  const firstCard = track.querySelector('.card');
+  if (firstCard) {
+    cardWidth = firstCard.getBoundingClientRect().width + parseFloat(getComputedStyle(track).gap);
+  }
+}
+function scrollByCards(dir = 1) {
+  track.parentElement.scrollBy({ left: dir * cardWidth * 3, behavior: 'smooth' });
+}
+window.addEventListener('resize', () => { updateCardWidth(); });
+updateCardWidth();
+
+prevBtn.addEventListener('click', () => scrollByCards(-1));
+nextBtn.addEventListener('click', () => scrollByCards(1));
+
+// Accordion
+document.querySelectorAll('.accordion .item').forEach((item) => {
+  const btn = item.querySelector('.trigger');
+  const panel = item.querySelector('.panel');
+
+  btn.addEventListener('click', () => {
+    const open = item.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+    // Close others
+    document.querySelectorAll('.accordion .item').forEach((other) => {
+      if (other !== item) {
+        other.classList.remove('is-open');
+        other.querySelector('.trigger').setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+});
+==================================
