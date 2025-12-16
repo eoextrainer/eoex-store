@@ -1,10 +1,10 @@
 from fastapi import FastAPI
-from routers import users, apps
+from app.api import router as api_router
 
-app = FastAPI()
-app.include_router(users.router)
-app.include_router(apps.router)
+app = FastAPI(title="EOEX Store Backend API", version="v1.0.0")
+
+app.include_router(api_router)
 
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to the eoex-app-store-01 API"}
+def root():
+    return {"message": "Welcome to EOEX Store Backend API"}
