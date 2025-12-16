@@ -1,0 +1,21 @@
+{
+  "name": "eoex-app-store-01-frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "web": "react-scripts start"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-native": "0.73.0",
+    "react-native-web": "0.19.10",
+    "@react-navigation/native": "^6.1.6",
+    "@react-navigation/stack": "^6.3.16",
+    "styled-components": "^6.1.8",
+    "axios": "^1.6.2",
+    "react-scripts": "5.0.1"
+  }
+}

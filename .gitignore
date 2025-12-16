@@ -1,0 +1,12 @@
+# .gitignore for eoex-app-store-01
+/node_modules/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.DS_Store
+/frontend/build/
+/backend/.venv/
+/database/mysql-data/
